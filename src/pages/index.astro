@@ -16,6 +16,7 @@ const projects = (await getCollection('projects')).sort((a, b) => {
 >
   <Header />
   <main class="site-shell site-main">
+    <h1 class="site-title"><a href="/">things</a></h1>
     <section class="project-section" aria-label="things">
       <div class="project-grid">
         {projects.map((project) => <ProjectCard project={project} />)}
