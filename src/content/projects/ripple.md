@@ -1,6 +1,5 @@
 ---
 title: floating chimes
-tagline: a browser audio sketch
 year: 2026
 tags:
   - Web Audio

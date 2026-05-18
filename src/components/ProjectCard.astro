@@ -6,15 +6,10 @@ type Props = {
 };
 
 const { project } = Astro.props;
-const { title, tagline, links } = project.data;
+const { title, links } = project.data;
 const href = links.live ?? links.repo;
 ---
 
 <a class="project-card" href={href}>
-  <article class="project-card-inner">
-    <div>
-      <h3 class="project-title">{title}</h3>
-      <p class="project-tagline">{tagline}</p>
-    </div>
-  </article>
+  <h3 class="project-title">{title}</h3>
 </a>

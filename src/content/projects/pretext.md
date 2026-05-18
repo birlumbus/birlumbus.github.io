@@ -1,6 +1,5 @@
 ---
 title: pretext demo
-tagline: text measurement and layout demos
 year: 2026
 tags:
   - TypeScript

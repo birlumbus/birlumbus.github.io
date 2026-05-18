@@ -130,7 +130,6 @@ p {
 
 .project-card {
   display: block;
-  min-height: 11rem;
   padding: 1rem;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -146,16 +145,6 @@ p {
 .project-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-}
-
-.project-title {
-  margin-bottom: 0.35rem;
-}
-
-.project-tagline {
-  max-width: 20rem;
-  color: var(--muted);
-  font-size: 0.92rem;
 }
 
 @media (max-width: 680px) {
