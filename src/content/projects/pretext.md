@@ -1,14 +1,13 @@
 ---
-title: Pretext
-tagline: Pure JavaScript and TypeScript text measurement and layout for DOM-free multiline rendering.
+title: pretext demo
+tagline: text measurement and layout demos
 year: 2026
 tags:
   - TypeScript
   - Text layout
   - Canvas
 links:
-  live: https://chenglou.me/pretext/
-  repo: https://github.com/chenglou/pretext
+  live: https://birlumbus.github.io/pretext-demo/
 featured: true
 order: 1
 accent: '#d5ff3f'

@@ -1,0 +1,188 @@
+/* ── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* Near-black, slightly warm — makes iridescent strands feel like they glow
+     in a real space rather than floating on a void */
+  background: #0a0908;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Canvas ───────────────────────────────────────────────────────────────── */
+canvas {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Fade in on load */
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+
+canvas.loaded {
+  opacity: 1;
+}
+
+/* ── Hint text ────────────────────────────────────────────────────────────── */
+#hint {
+  position: fixed;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.20);
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.45s ease;
+  user-select: none;
+}
+
+#hint.hidden {
+  opacity: 0;
+}
+
+/* ── Click-to-begin overlay ───────────────────────────────────────────────── */
+.unlock-overlay {
+  --unlock-pop-lift: 128px; /* sits just above the preset chip stack */
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--unlock-pop-lift);
+  margin: 0;
+  border: none;
+  background: rgba(10, 9, 8, 0.58);
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.55s ease, visibility 0.55s ease;
+}
+
+.unlock-overlay:focus {
+  outline: none;
+}
+
+.unlock-overlay:focus-visible .unlock-pop__svg {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.25));
+}
+
+.unlock-overlay--dismissed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Impact burst — cartoon pop lines, not a bubble shape */
+.unlock-pop {
+  display: block;
+  pointer-events: none;
+}
+
+.unlock-pop__svg {
+  display: block;
+  overflow: visible;
+  color: rgba(155, 155, 162, 0.88);
+  animation: unlock-pop-glow 1.4s ease-in-out infinite;
+}
+
+@keyframes unlock-pop-glow {
+  0%, 100% {
+    color: rgba(148, 148, 156, 0.82);
+    opacity: 0.62;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.08));
+  }
+  50% {
+    color: rgba(255, 255, 255, 1);
+    opacity: 1;
+    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.75));
+  }
+}
+
+/* ── Preset chip strip ────────────────────────────────────────────────────── */
+#presets {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(960px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: center;
+  /* Keep the UI above the canvas but non-interactive to the canvas itself */
+  pointer-events: auto;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.chip {
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent chip clicks from being treated as pointer move events on the canvas */
+  touch-action: manipulation;
+}
+
+.chip:hover {
+  border-color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.chip.active {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* ── Touch-device adjustments ────────────────────────────────────────────── */
+@media (pointer: coarse) {
+  .chip {
+    padding: 6px 14px;
+    font-size: 11px;
+  }
+
+  #hint {
+    font-size: 12px;
+    bottom: 80px;
+  }
+
+  #presets {
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .unlock-overlay {
+    --unlock-pop-lift: 148px;
+  }
+}

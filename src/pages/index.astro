@@ -1,6 +1,5 @@
 ---
 import { getCollection } from 'astro:content';
-import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -12,41 +11,15 @@ const projects = (await getCollection('projects')).sort((a, b) => {
 ---
 
 <BaseLayout
-  title="Rhodri Thomas | Projects"
-  description="A fast personal site collecting projects by Rhodri Thomas."
+  title="things"
+  description="Small web things by Rhodri Thomas."
 >
   <Header />
   <main class="site-shell site-main">
-    <section class="hero" aria-labelledby="intro-title">
-      <div>
-        <p class="eyebrow">birlumbus.github.io</p>
-        <h1 id="intro-title">Small tools, weird systems.</h1>
-      </div>
-      <div class="hero-copy">
-        <p>
-          I build experiments that care about feel: text layout engines, browser audio toys,
-          and the useful edges between design and implementation.
-        </p>
-        <p>
-          This site is a lightweight index of current work, built as static HTML so the projects
-          stay first and the page stays fast.
-        </p>
-      </div>
-    </section>
-
-    <section class="project-section" id="projects" aria-labelledby="projects-title">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Selected work</p>
-          <h2 id="projects-title">Projects</h2>
-        </div>
-        <p>{projects.length} live entries</p>
-      </div>
-
+    <section class="project-section" aria-label="things">
       <div class="project-grid">
         {projects.map((project) => <ProjectCard project={project} />)}
       </div>
     </section>
   </main>
-  <Footer />
 </BaseLayout>
