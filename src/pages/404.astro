@@ -1,0 +1,22 @@
+---
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Not found | Rhodri Thomas" description="This page does not exist.">
+  <Header />
+  <main class="site-shell site-main">
+    <section class="hero" aria-labelledby="not-found-title">
+      <div>
+        <p class="eyebrow">404</p>
+        <h1 id="not-found-title">Nothing here.</h1>
+      </div>
+      <div class="hero-copy">
+        <p>The page you were looking for has either moved or never existed.</p>
+        <p><a href="/">Return home</a></p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>

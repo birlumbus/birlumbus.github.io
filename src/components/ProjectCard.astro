@@ -1,0 +1,26 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type Props = {
+  project: CollectionEntry<'projects'>;
+};
+
+const { project } = Astro.props;
+const { title, tagline, tags, links, accent } = project.data;
+const href = links.live ?? links.repo;
+const linkLabel = links.live ? 'Open live project' : 'View repository';
+---
+
+<a class="project-card" href={href} target="_blank" rel="noreferrer" style={`--card-accent: ${accent};`}>
+  <article class="project-card-inner">
+    <div class="project-meta" aria-label={`${title} tags`}>
+      {tags.map((tag) => <span class="tag">{tag}</span>)}
+    </div>
+
+    <div>
+      <h3 class="project-title">{title}</h3>
+      <p class="project-tagline">{tagline}</p>
+      <span class="project-link-label">{linkLabel} <span aria-hidden="true">-></span></span>
+    </div>
+  </article>
+</a>
