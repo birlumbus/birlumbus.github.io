@@ -59,7 +59,7 @@ export class AudioEngine {
     this._ctx = new Ctx();
 
     this._masterGain = this._ctx.createGain();
-    this._masterGain.gain.value = 0.72;
+    this._masterGain.gain.value = 0.72 * 0.85;
     this._masterGain.connect(this._ctx.destination);
 
     // Dry signal path (direct)
