@@ -13,6 +13,8 @@ export class AudioEngine {
   constructor() {
     this._ctx = null;
     this._masterGain = null;
+    this._limiter = null;
+    this._outputTrim = null;
     this._dryGain = null;
     this._wetGain = null;
     this._reverbNode = null;
@@ -60,16 +62,29 @@ export class AudioEngine {
 
     this._masterGain = this._ctx.createGain();
     this._masterGain.gain.value = 0.72 * 0.85;
-    this._masterGain.connect(this._ctx.destination);
+
+    this._limiter = this._ctx.createDynamicsCompressor();
+    this._limiter.threshold.value = -10;
+    this._limiter.knee.value = 8;
+    this._limiter.ratio.value = 16;
+    this._limiter.attack.value = 0.004;
+    this._limiter.release.value = 0.18;
+
+    this._outputTrim = this._ctx.createGain();
+    this._outputTrim.gain.value = 0.92;
+
+    this._masterGain.connect(this._limiter);
+    this._limiter.connect(this._outputTrim);
+    this._outputTrim.connect(this._ctx.destination);
 
     // Dry signal path (direct)
     this._dryGain = this._ctx.createGain();
-    this._dryGain.gain.value = 0.40;
+    this._dryGain.gain.value = 0.36;
     this._dryGain.connect(this._masterGain);
 
     // Wet signal path (reverb)
     this._wetGain = this._ctx.createGain();
-    this._wetGain.gain.value = 0.60;
+    this._wetGain.gain.value = 0.42;
     this._wetGain.connect(this._masterGain);
 
     this._reverbNode = this._ctx.createConvolver();
@@ -78,7 +93,7 @@ export class AudioEngine {
 
     // Single send bus into the reverb
     this._reverbSend = this._ctx.createGain();
-    this._reverbSend.gain.value = 1.0;
+    this._reverbSend.gain.value = 0.72;
     this._reverbSend.connect(this._reverbNode);
   }
 

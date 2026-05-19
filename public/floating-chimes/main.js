@@ -33,6 +33,7 @@ const canvas         = document.getElementById('canvas');
 const ctx2d          = canvas.getContext('2d');
 const hint           = document.getElementById('hint');
 const unlockOverlay  = document.getElementById('unlock-overlay');
+const browserNote    = document.getElementById('browser-note');
 
 const DEFAULT_CHORD_IDX = CHORDS.findIndex(c => c.name.startsWith('Aurora'));
 let chordIdx  = DEFAULT_CHORD_IDX >= 0 ? DEFAULT_CHORD_IDX : 0;
@@ -47,6 +48,11 @@ let audioReady = false;
 
 const audio  = new AudioEngine();
 const chimes = LAYOUT.map(cfg => new Chime(cfg));
+
+if (browserNote && /\bFirefox\//.test(navigator.userAgent)) {
+  browserNote.hidden = false;
+  unlockOverlay.setAttribute('aria-label', 'Click to begin. Best in Chrome.');
+}
 
 // ─── Resize ──────────────────────────────────────────────────────────────────
 
