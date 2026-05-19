@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Ripple</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <canvas id="canvas"></canvas>
+
+  <!-- Click anywhere to unlock audio (required by browsers). No visible text. -->
+  <button type="button" id="unlock-overlay" class="unlock-overlay" aria-label="Begin">
+    <span class="unlock-pop" aria-hidden="true">
+      <svg class="unlock-pop__svg" viewBox="-16 -16 32 32" width="56" height="56" fill="none">
+        <g class="unlock-pop__rays" stroke="currentColor" stroke-width="1.85" stroke-linecap="round">
+          <!-- Eight symmetric spokes, gap at center - cartoon pop burst -->
+          <line x1="0" y1="-6" x2="0" y2="-9.5" />
+          <line x1="4.24" y1="-4.24" x2="6.72" y2="-6.72" />
+          <line x1="6" y1="0" x2="9.5" y2="0" />
+          <line x1="4.24" y1="4.24" x2="6.72" y2="6.72" />
+          <line x1="0" y1="6" x2="0" y2="9.5" />
+          <line x1="-4.24" y1="4.24" x2="-6.72" y2="6.72" />
+          <line x1="-6" y1="0" x2="-9.5" y2="0" />
+          <line x1="-4.24" y1="-4.24" x2="-6.72" y2="-6.72" />
+        </g>
+      </svg>
+    </span>
+  </button>
+
+  <!-- First-load onboarding hint. Fades out on first pointer/touch event. -->
+  <div id="hint">move to listen</div>
+
+  <!-- Preset chip strip (bottom-right). Built dynamically by main.js. -->
+  <div id="presets">
+    <div id="voice-row" class="chip-row" aria-label="Voice preset"></div>
+    <div id="chord-row" class="chip-row" aria-label="Chord preset"></div>
+  </div>
+
+  <!-- Single ES-module entry point. All other files are imported from here. -->
+  <script type="module" src="../main.js"></script>
+
+</body>
+</html>
