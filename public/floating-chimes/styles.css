@@ -150,7 +150,7 @@ canvas.loaded {
   bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(960px, calc(100vw - 32px));
+  width: min(680px, calc(100vw - 32px));
   display: flex;
   flex-direction: column;
   gap: 7px;
