@@ -1,20 +1,20 @@
 ---
 import { getCollection } from 'astro:content';
-import Header from '../components/Header.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const projects = (await getCollection('projects')).sort((a, b) => {
-  if (a.data.order !== b.data.order) return a.data.order - b.data.order;
-  return b.data.year - a.data.year;
-});
+const projects = (await getCollection('projects'))
+  .filter(({ data }) => data.featured)
+  .sort((a, b) => {
+    if (a.data.order !== b.data.order) return a.data.order - b.data.order;
+    return b.data.year - a.data.year;
+  });
 ---
 
 <BaseLayout
   title="things"
-  description="Small web things by Rhodri Thomas."
+  description="Projects."
 >
-  <Header />
   <main class="site-shell site-main">
     <h1 class="site-title"><a href="/">things</a></h1>
     <section class="project-section" aria-label="things">

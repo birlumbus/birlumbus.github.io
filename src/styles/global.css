@@ -75,16 +75,6 @@ p {
   margin-inline: auto;
 }
 
-.site-header {
-  padding-block: 1rem;
-}
-
-.header-inner {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.nav-links a,
 .project-title {
   font-size: 0.94rem;
   font-weight: 600;
@@ -92,7 +82,6 @@ p {
   text-transform: lowercase;
 }
 
-.nav-links a,
 .project-card {
   text-decoration: none;
 }
@@ -109,22 +98,6 @@ p {
 .site-title a {
   text-decoration: none;
   color: inherit;
-}
-
-.nav-links {
-  display: flex;
-  gap: 1rem;
-}
-
-.nav-links a {
-  color: var(--muted);
-}
-
-.nav-links a:hover {
-  color: var(--accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.22em;
 }
 
 .project-card:hover .project-title,
