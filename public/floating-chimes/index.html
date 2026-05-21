@@ -19,10 +19,14 @@
   <!-- First-load onboarding hint. Fades out on first pointer/touch event. -->
   <div id="hint">move to listen</div>
 
-  <!-- Preset chip strip (bottom-right). Built dynamically by main.js. -->
+  <!-- Preset controls. Built dynamically by main.js. -->
   <div id="presets">
     <div id="voice-row" class="chip-row" aria-label="Voice preset"></div>
-    <div id="chord-row" class="chip-row" aria-label="Chord preset"></div>
+    <div id="chord-pad-grid" class="chord-pad-grid" aria-label="Chord pads"></div>
+    <div id="key-panel" class="key-panel" aria-label="Selected chord key">
+      <div id="key-panel-title" class="key-panel-title" aria-live="polite"></div>
+      <div id="key-row" class="key-row"></div>
+    </div>
   </div>
 
   <!-- Single ES-module entry point. All other files are imported from here. -->
