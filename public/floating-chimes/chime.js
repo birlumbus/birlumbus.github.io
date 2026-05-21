@@ -54,7 +54,7 @@ const MIN_LAYOUT_WIDTH = 560;
 const MAX_LAYOUT_WIDTH = 800;
 const VERTICAL_SAMPLES = 192;
 const DEPTH_BANDS = 5;
-const VISUAL_IMPULSE_SCALE = 0.29;
+const VISUAL_IMPULSE_SCALE = 0.8;
 const BASELINE_VERTICAL_SAMPLES = 96;
 const IMPULSE_RADIUS = Math.round(12 * VERTICAL_SAMPLES / BASELINE_VERTICAL_SAMPLES);
 const IMPULSE_SPREAD = 5.25 * VERTICAL_SAMPLES / BASELINE_VERTICAL_SAMPLES;
@@ -62,6 +62,12 @@ const RIPPLE_SPREAD = 0.19;
 const RIPPLE_VELOCITY_DAMPING = 0.935;
 const RIPPLE_SETTLING = 0.952;
 const RIPPLE_EDGE_DAMPING = 0.88;
+const RIPPLE_SWELL_SCALE = 3.2;
+const RIPPLE_SHEEN_THRESHOLD = 0.07;
+const RIPPLE_SHEEN_ALPHA = 0.16;
+const RIPPLE_SHEEN_WIDTH = 0.82;
+const NOTE_RELOAD_DELAY_SECONDS = 0.9;
+const NOTE_SETTLE_AMPLITUDE = 0.04;
 
 // ─── Chime class ────────────────────────────────────────────────────────────
 
@@ -94,6 +100,7 @@ export class Chime {
     this.baseOffset = 0;        // current palette position (float, tweens toward target)
     this.baseOffsetTarget = 0;  // target palette position for the loaded note
     this.isSettled = true;
+    this.noteReloadTimer = 0;
 
     // Screen coordinates (populated by resize())
     this.x = 0;
@@ -193,6 +200,7 @@ export class Chime {
     this.injectImpulse(yNorm, strength * VISUAL_IMPULSE_SCALE);
     this.lastPlayedNote = this.loadedNote;
     this.isSettled = false;
+    this.noteReloadTimer = NOTE_RELOAD_DELAY_SECONDS;
     return this.loadedNote;
   }
 
@@ -200,10 +208,13 @@ export class Chime {
   update(delta, chordLen, adjacentNotes) {
     this.advanceRipple(delta);
 
-    if (!this.isSettled && this._maxAmplitude() < 0.04) {
-      this.isSettled = true;
-      this.loadedNote = this._pickNextNote(chordLen, adjacentNotes);
-      this.baseOffsetTarget = this.loadedNote;
+    if (!this.isSettled) {
+      this.noteReloadTimer = Math.max(0, this.noteReloadTimer - delta);
+      if (this.noteReloadTimer <= 0 || this._maxAmplitude() < NOTE_SETTLE_AMPLITUDE) {
+        this.isSettled = true;
+        this.loadedNote = this._pickNextNote(chordLen, adjacentNotes);
+        this.baseOffsetTarget = this.loadedNote;
+      }
     }
 
     // Tween baseOffset toward target (400 ms)
@@ -305,7 +316,7 @@ export class Chime {
       const [cr, cg, cb] = blendColors(pos);
 
       // Width swells with wave amplitude — the "liquid metal" bulge effect
-      const w = baseWidth + (r < 0 ? -r : r) * 3.2;
+      const w = baseWidth + (r < 0 ? -r : r) * RIPPLE_SWELL_SCALE;
       ctx.fillStyle = `rgba(${cr * 255 | 0},${cg * 255 | 0},${cb * 255 | 0},0.94)`;
       ctx.fillRect(x - w * 0.5, y, w, segH);
     }
@@ -350,33 +361,35 @@ export class Chime {
     }
     ctx.restore();
 
-    // ── Pass 4: Shimmer highlights ─────────────────────────────────────────
-    // Small white glints on steep wave fronts. Kept subtle so the liquid color
-    // field stays dominant instead of breaking into bright vertical streaks.
+    // ── Pass 4: Crest sheens ───────────────────────────────────────────────
+    // Soft horizontal reflections at wave peaks. These keep the tactile
+    // "played" texture without turning the strand into vertical white lines.
     ctx.save();
     clipToRoundedStrand();
-    for (let j = 0; j < D; j++) {
-      const jProgress = j / (D - 1);
-      // Each depth band is drawn at a slightly different x position across
-      // the strand width, giving a sense of volumetric depth.
-      const depthX = x - baseWidth * 0.5 + jProgress * baseWidth;
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < N; i++) {
+      const h = ripple[i];
+      const gradient = grad[i] < 0 ? -grad[i] : grad[i];
+      const sheen = h * 0.5 + gradient * 0.72 - RIPPLE_SHEEN_THRESHOLD;
+      if (sheen <= 0) continue;
 
-      for (let i = 0; i < N; i++) {
-        const h    = a[j * N + i];
-        const abov = i > 0     ? a[j * N + i - 1] : 0;
-        const belo = i < N - 1 ? a[j * N + i + 1] : 0;
-        const gradient = (belo - abov) < 0 ? -(belo - abov) : (belo - abov);
-
-        // Crest threshold mirrors Swift line 790
-        const crest = h * 0.42 + gradient * 0.92 - 0.075;
-        if (crest <= 0) continue;
-
-        const t3 = i / (N - 1);
-        const lineW = 0.75 + (crest * 5.5 < 1.35 ? crest * 5.5 : 1.35);
-        const alpha = crest * 0.85 < 0.14 ? crest * 0.85 : 0.14;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fillRect(depthX + h * 2.2 - lineW * 0.5, top + t3 * height, lineW, segH);
-      }
+      const t3 = i / (N - 1);
+      const y = top + t3 * height;
+      const shimmer = Math.sin(t3 * 18 + globalPhase * 9 + baseOffset) * 0.5 + 0.5;
+      const width = baseWidth * (0.26 + Math.min(RIPPLE_SHEEN_WIDTH, sheen * 4.8));
+      const heightPx = 0.7 + Math.min(1.25, sheen * 5.2);
+      const offset = (shimmer - 0.5) * baseWidth * 0.34 + h * 2.2;
+      const left = x + offset - width * 0.5;
+      const alpha = Math.min(RIPPLE_SHEEN_ALPHA, sheen * 0.55);
+      const glow = ctx.createLinearGradient(left, 0, left + width, 0);
+      glow.addColorStop(0, 'rgba(255,255,255,0)');
+      glow.addColorStop(0.28, `rgba(255,255,255,${alpha * 0.32})`);
+      glow.addColorStop(0.52, `rgba(255,255,255,${alpha})`);
+      glow.addColorStop(0.78, `rgba(210,255,255,${alpha * 0.28})`);
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = glow;
+      roundedRectPath(ctx, left, y - heightPx * 0.5, width, heightPx, heightPx * 0.5);
+      ctx.fill();
     }
     ctx.restore();
   }

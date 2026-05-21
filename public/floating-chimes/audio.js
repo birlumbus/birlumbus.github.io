@@ -20,7 +20,7 @@ export class AudioEngine {
     this._reverbNode = null;
     this._reverbSend = null;
     this._voices = [];
-    this._maxVoices = 6;
+    this._maxVoices = 10;
     this._unlocked = false;
     this._initPromise = null;
   }
