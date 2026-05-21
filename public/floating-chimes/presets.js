@@ -1,11 +1,15 @@
-// Chord presets — each has a name, an array of frequencies in Hz (5–6 notes), and
-// a palette of RGB colors (one per note, normalized 0–1) used for hue-shifting.
+// Chord presets — each has a name, root metadata, an array of frequencies in Hz
+// (5–6 notes), and a palette of RGB colors (one per note, normalized 0–1) used
+// for hue-shifting.
 //
 // Voice presets — each has a name and a synth type used by AudioEngine.
 
 export const CHORDS = [
   {
     name: 'Frost (Cmaj9)',
+    shortName: 'Frost',
+    root: 'C',
+    suffix: 'maj9',
     // Cmaj9: C4 E4 G4 B4 D5 — cool, crystalline
     freqs: [261.63, 329.63, 392.00, 493.88, 587.33],
     colors: [
@@ -18,6 +22,9 @@ export const CHORDS = [
   },
   {
     name: 'Forest (Dm11)',
+    shortName: 'Forest',
+    root: 'D',
+    suffix: 'm11',
     // Dm11: D3 F3 A3 C4 G4 — earthy, deep
     freqs: [146.83, 174.61, 220.00, 261.63, 392.00],
     colors: [
@@ -30,6 +37,9 @@ export const CHORDS = [
   },
   {
     name: 'Aurora (F Lydian)',
+    shortName: 'Aurora',
+    root: 'F',
+    suffix: ' Lydian',
     // F Lydian: F4 G4 A4 B4 C5 E5 — ethereal, violet/teal
     freqs: [349.23, 392.00, 440.00, 493.88, 523.25, 659.25],
     colors: [
@@ -43,6 +53,9 @@ export const CHORDS = [
   },
   {
     name: 'Ember (G pentatonic)',
+    shortName: 'Ember',
+    root: 'G',
+    suffix: ' pentatonic',
     // G major pentatonic: G3 A3 B3 D4 E4 — warm, golden
     freqs: [196.00, 220.00, 246.94, 293.66, 329.63],
     colors: [
@@ -55,6 +68,9 @@ export const CHORDS = [
   },
   {
     name: 'Dusk (Am9)',
+    shortName: 'Dusk',
+    root: 'A',
+    suffix: 'm9',
     // Am9: A2 C3 E3 G3 B3 D4 — warm, muted violet and rust
     freqs: [110.00, 130.81, 164.81, 196.00, 246.94, 293.66],
     colors: [
@@ -68,6 +84,9 @@ export const CHORDS = [
   },
   {
     name: 'Mist (Esus2)',
+    shortName: 'Mist',
+    root: 'E',
+    suffix: 'sus2',
     // Esus2(add7): E3 F#3 B3 D4 F#4 — suspended, pearly
     freqs: [164.81, 185.00, 246.94, 293.66, 369.99],
     colors: [
@@ -80,6 +99,9 @@ export const CHORDS = [
   },
   {
     name: 'Coral (Fmaj7#11)',
+    shortName: 'Coral',
+    root: 'F',
+    suffix: 'maj7#11',
     // Fmaj7#11: F3 A3 B3 C4 E4 — bright, glassy warmth
     freqs: [174.61, 220.00, 246.94, 261.63, 329.63],
     colors: [
@@ -92,6 +114,9 @@ export const CHORDS = [
   },
   {
     name: 'Nocturne (C#min9)',
+    shortName: 'Nocturne',
+    root: 'C#',
+    suffix: 'min9',
     // C#min9: C#3 E3 G#3 B3 D#4 — deep, nocturnal
     freqs: [138.59, 164.81, 207.65, 246.94, 311.13],
     colors: [
@@ -104,6 +129,9 @@ export const CHORDS = [
   },
   {
     name: 'Lotus (Db Lydian)',
+    shortName: 'Lotus',
+    root: 'Db',
+    suffix: ' Lydian',
     // Db Lydian: Db4 Eb4 F4 G4 Ab4 C5 — luminous, lifted
     freqs: [277.18, 311.13, 349.23, 392.00, 415.30, 523.25],
     colors: [
@@ -117,6 +145,9 @@ export const CHORDS = [
   },
   {
     name: 'Tide (E Dorian)',
+    shortName: 'Tide',
+    root: 'E',
+    suffix: ' Dorian',
     // E Dorian: E3 F#3 G3 B3 D4 — sea-green and open
     freqs: [164.81, 185.00, 196.00, 246.94, 293.66],
     colors: [

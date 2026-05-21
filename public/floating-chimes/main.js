@@ -5,7 +5,7 @@
 //   • Runs the rAF animation loop (physics update + render).
 //   • Handles pointermove crossing detection (works for mouse and touch via
 //     the Pointer Events API, which browsers normalize from touch).
-//   • Manages chord/voice preset state and builds the chip strip UI.
+//   • Manages chord/voice preset state and builds the pad/key UI.
 //   • Unlocks the AudioContext after the user dismisses the start overlay (click).
 
 import { CHORDS, VOICES } from './presets.js';
@@ -27,6 +27,23 @@ const LAYOUT = [
   { xPercent: 89, yCenterPercent: 55, heightPercent: 42 },
 ];
 
+const CHORD_GRID_COLUMNS = 5;
+const KEY_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const NOTE_TO_SEMITONE = new Map([
+  ['C', 0], ['B#', 0],
+  ['C#', 1], ['Db', 1],
+  ['D', 2],
+  ['D#', 3], ['Eb', 3],
+  ['E', 4], ['Fb', 4],
+  ['E#', 5], ['F', 5],
+  ['F#', 6], ['Gb', 6],
+  ['G', 7],
+  ['G#', 8], ['Ab', 8],
+  ['A', 9],
+  ['A#', 10], ['Bb', 10],
+  ['B', 11], ['Cb', 11],
+]);
+
 // ─── State ───────────────────────────────────────────────────────────────────
 
 const canvas         = document.getElementById('canvas');
@@ -34,6 +51,9 @@ const ctx2d          = canvas.getContext('2d');
 const hint           = document.getElementById('hint');
 const unlockOverlay  = document.getElementById('unlock-overlay');
 const browserNote    = document.getElementById('browser-note');
+const chordPadGrid   = document.getElementById('chord-pad-grid');
+const keyPanelTitle  = document.getElementById('key-panel-title');
+const keyRow         = document.getElementById('key-row');
 
 const DEFAULT_CHORD_IDX = CHORDS.findIndex(c => c.name.startsWith('Aurora'));
 let chordIdx  = DEFAULT_CHORD_IDX >= 0 ? DEFAULT_CHORD_IDX : 0;
@@ -48,10 +68,45 @@ let audioReady = false;
 
 const audio  = new AudioEngine();
 const chimes = LAYOUT.map(cfg => new Chime(cfg));
+const chordRootSemitones = CHORDS.map(chord => noteToSemitone(chord.root));
+const chordKeySemitones = chordRootSemitones.slice();
+const chordButtons = [];
+const chordButtonLabels = [];
+const keyButtons = [];
 
 if (browserNote && /\bFirefox\//.test(navigator.userAgent)) {
   browserNote.hidden = false;
   unlockOverlay.setAttribute('aria-label', 'Click to begin. Best in Chrome.');
+}
+
+// ─── Note/key helpers ───────────────────────────────────────────────────────
+
+function noteToSemitone(noteName) {
+  const semitone = NOTE_TO_SEMITONE.get(noteName);
+  if (semitone === undefined) {
+    throw new Error(`Unknown note name: ${noteName}`);
+  }
+  return semitone;
+}
+
+function wrapIndex(index, length) {
+  return ((index % length) + length) % length;
+}
+
+function nearestSemitoneDelta(fromSemitone, toSemitone) {
+  let delta = toSemitone - fromSemitone;
+  if (delta > 6) delta -= 12;
+  if (delta < -6) delta += 12;
+  return delta;
+}
+
+function chordLabel(index) {
+  return `${KEY_NAMES[chordKeySemitones[index]]}${CHORDS[index].suffix}`;
+}
+
+function chordTransposeFactor(index) {
+  const delta = nearestSemitoneDelta(chordRootSemitones[index], chordKeySemitones[index]);
+  return 2 ** (delta / 12);
 }
 
 // ─── Resize ──────────────────────────────────────────────────────────────────
@@ -149,8 +204,9 @@ function onPointerMove(e) {
     // Velocity-modulated strike strength (0.1 floor so slow sweeps still ring)
     const strength = 0.1 + 0.9 * Math.min(1, speed / 480);
 
-    const chord     = CHORDS[chordIdx];
-    const voiceType = VOICES[voiceIdx].type;
+    const chord      = CHORDS[chordIdx];
+    const voiceType  = VOICES[voiceIdx].type;
+    const transpose  = chordTransposeFactor(chordIdx);
 
     for (let i = 0; i < chimes.length; i++) {
       const chime = chimes[i];
@@ -158,7 +214,7 @@ function onPointerMove(e) {
       if (crossY === null) continue;
 
       const note = chime.strike(crossY, strength);
-      const freq = chord.freqs[note % chord.freqs.length];
+      const freq = chord.freqs[note % chord.freqs.length] * transpose;
       audio.playNote(freq, strength, voiceType);
     }
   }
@@ -198,37 +254,170 @@ function crossingY(ox, oy, cx, cy, chime) {
   return y;
 }
 
-// ─── Preset chip strip ────────────────────────────────────────────────────────
+// ─── Preset controls ─────────────────────────────────────────────────────────
 
 function buildChips(rowId, items, getIdx, setIdx) {
   const row = document.getElementById(rowId);
+  row.textContent = '';
   items.forEach((item, i) => {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'chip' + (i === getIdx() ? ' active' : '');
     btn.textContent = item.name;
+    btn.setAttribute('aria-pressed', i === getIdx() ? 'true' : 'false');
     btn.addEventListener('click', () => {
       setIdx(i);
-      row.querySelectorAll('.chip').forEach((c, j) =>
-        c.classList.toggle('active', j === i)
-      );
+      updateChipRow(row, getIdx);
     });
     row.appendChild(btn);
   });
 }
 
-buildChips('chord-row', CHORDS, () => chordIdx, (i) => {
-  if (i === chordIdx) return;
-  prevChordIdx = chordIdx;
-  chordIdx = i;
-  crossfadeT = 0;
-  // Reset each chime's loaded note to a random one in the new chord
-  const len = CHORDS[i].freqs.length;
+function updateChipRow(row, getIdx) {
+  row.querySelectorAll('.chip').forEach((chip, i) => {
+    const active = i === getIdx();
+    chip.classList.toggle('active', active);
+    chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function resetChimesForChord(index) {
+  const len = CHORDS[index].freqs.length;
   chimes.forEach(c => {
     c.loadedNote = Math.floor(Math.random() * len);
     c.baseOffsetTarget = c.loadedNote;
   });
-});
+}
 
+function selectChord(index, { focusPad = false } = {}) {
+  const nextIndex = wrapIndex(index, CHORDS.length);
+  if (nextIndex !== chordIdx) {
+    prevChordIdx = chordIdx;
+    chordIdx = nextIndex;
+    crossfadeT = 0;
+    resetChimesForChord(nextIndex);
+  }
+
+  updateChordPads();
+  updateKeyPanel();
+
+  if (focusPad && chordButtons[chordIdx]) {
+    chordButtons[chordIdx].focus({ preventScroll: true });
+  }
+}
+
+function buildChordPads() {
+  chordPadGrid.textContent = '';
+  CHORDS.forEach((chord, i) => {
+    const btn = document.createElement('button');
+    const name = document.createElement('span');
+    const label = document.createElement('span');
+
+    btn.type = 'button';
+    btn.className = 'chord-pad';
+    btn.addEventListener('click', () => selectChord(i));
+
+    name.className = 'chord-pad__name';
+    label.className = 'chord-pad__chord';
+
+    btn.append(name, label);
+    chordPadGrid.appendChild(btn);
+    chordButtons[i] = btn;
+    chordButtonLabels[i] = { name, label };
+  });
+
+  updateChordPads();
+}
+
+function updateChordPads() {
+  CHORDS.forEach((chord, i) => {
+    const btn = chordButtons[i];
+    const labels = chordButtonLabels[i];
+    const active = i === chordIdx;
+    const label = chordLabel(i);
+
+    labels.name.textContent = chord.shortName;
+    labels.label.textContent = label;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.setAttribute('aria-label', `${chord.shortName} ${label}`);
+  });
+}
+
+function buildKeyButtons() {
+  keyRow.textContent = '';
+  KEY_NAMES.forEach((keyName, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'key-button';
+    btn.textContent = keyName;
+    btn.addEventListener('click', () => {
+      chordKeySemitones[chordIdx] = i;
+      updateChordPads();
+      updateKeyPanel();
+    });
+    keyRow.appendChild(btn);
+    keyButtons[i] = btn;
+  });
+
+  updateKeyPanel();
+}
+
+function updateKeyPanel() {
+  const chord = CHORDS[chordIdx];
+  const selectedKey = chordKeySemitones[chordIdx];
+  const selectedLabel = chordLabel(chordIdx);
+
+  keyPanelTitle.textContent = `${chord.shortName} ${selectedLabel}`;
+  keyRow.setAttribute('aria-label', `${chord.shortName} key`);
+
+  keyButtons.forEach((btn, i) => {
+    const active = i === selectedKey;
+    const label = `${KEY_NAMES[i]}${chord.suffix}`;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.setAttribute('aria-label', `${chord.shortName} ${label}`);
+  });
+}
+
+function chordGridIndex(row, col) {
+  const rowCount = Math.ceil(CHORDS.length / CHORD_GRID_COLUMNS);
+  const wrappedRow = wrapIndex(row, rowCount);
+  const wrappedCol = wrapIndex(col, CHORD_GRID_COLUMNS);
+  const index = wrappedRow * CHORD_GRID_COLUMNS + wrappedCol;
+  return index < CHORDS.length ? index : wrappedCol % CHORDS.length;
+}
+
+function isTextEntryTarget(target) {
+  const tagName = target?.tagName;
+  return target?.isContentEditable || tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA';
+}
+
+function onKeyDown(event) {
+  if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (isTextEntryTarget(event.target)) return;
+
+  const row = Math.floor(chordIdx / CHORD_GRID_COLUMNS);
+  const col = chordIdx % CHORD_GRID_COLUMNS;
+  let nextIndex = null;
+
+  if (event.key === 'ArrowLeft') {
+    nextIndex = chordGridIndex(row, col - 1);
+  } else if (event.key === 'ArrowRight') {
+    nextIndex = chordGridIndex(row, col + 1);
+  } else if (event.key === 'ArrowUp') {
+    nextIndex = chordGridIndex(row - 1, col);
+  } else if (event.key === 'ArrowDown') {
+    nextIndex = chordGridIndex(row + 1, col);
+  }
+
+  if (nextIndex === null) return;
+  event.preventDefault();
+  selectChord(nextIndex, { focusPad: true });
+}
+
+buildChordPads();
+buildKeyButtons();
 buildChips('voice-row', VOICES, () => voiceIdx, (i) => { voiceIdx = i; });
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
@@ -257,6 +446,7 @@ unlockOverlay.addEventListener('click', (e) => {
 
 window.addEventListener('resize', resize);
 window.addEventListener('pointermove', onPointerMove, { passive: true });
+window.addEventListener('keydown', onKeyDown);
 
 resize();
 canvas.classList.add('loaded');
