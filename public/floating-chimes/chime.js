@@ -68,6 +68,9 @@ const RIPPLE_SHEEN_ALPHA = 0.16;
 const RIPPLE_SHEEN_WIDTH = 0.82;
 const NOTE_RELOAD_DELAY_SECONDS = 0.9;
 const NOTE_SETTLE_AMPLITUDE = 0.04;
+const PALETTE_RETUNE_RATE = 0.72;
+const PALETTE_RETUNE_SHIFT_FRACTION = 0.36;
+const PALETTE_RETUNE_EPSILON = 0.003;
 
 // ─── Chime class ────────────────────────────────────────────────────────────
 
@@ -213,14 +216,16 @@ export class Chime {
       if (this.noteReloadTimer <= 0 || this._maxAmplitude() < NOTE_SETTLE_AMPLITUDE) {
         this.isSettled = true;
         this.loadedNote = this._pickNextNote(chordLen, adjacentNotes);
-        this.baseOffsetTarget = this.loadedNote;
+        this.baseOffsetTarget = this._softRetuneTarget(this.loadedNote, chordLen);
       }
     }
 
-    // Tween baseOffset toward target (400 ms)
+    // Let the post-ripple palette retune drift quietly instead of snapping to
+    // the next note color. The target is already softened, so this easing can be
+    // deliberately slow without making the strand feel unresponsive.
     const diff = this.baseOffsetTarget - this.baseOffset;
-    if (Math.abs(diff) > 0.005) {
-      this.baseOffset += diff * Math.min(1, delta * 2.5);
+    if (Math.abs(diff) > PALETTE_RETUNE_EPSILON) {
+      this.baseOffset += diff * Math.min(1, delta * PALETTE_RETUNE_RATE);
     } else {
       this.baseOffset = this.baseOffsetTarget;
     }
@@ -404,6 +409,15 @@ export class Chime {
       if (v > max) max = v;
     }
     return max;
+  }
+
+  _softRetuneTarget(note, chordLen) {
+    if (chordLen <= 0) return this.baseOffset;
+
+    const wrappedNote = ((note % chordLen) + chordLen) % chordLen;
+    const nearestEquivalent = wrappedNote + Math.round((this.baseOffset - wrappedNote) / chordLen) * chordLen;
+    const shortestShift = nearestEquivalent - this.baseOffset;
+    return this.baseOffset + shortestShift * PALETTE_RETUNE_SHIFT_FRACTION;
   }
 
   // Weighted random note selection: strongly avoids repeating the last note,
