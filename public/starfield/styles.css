@@ -194,6 +194,8 @@ body {
 .flight-console__action:hover,
 .flight-console__action:focus-visible {
   border-color: rgba(236, 245, 247, 0.84);
+  outline: 1px solid rgba(236, 245, 247, 0.78);
+  outline-offset: 4px;
 }
 
 @keyframes stopFlightButtonBlink {
