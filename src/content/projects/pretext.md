@@ -6,7 +6,7 @@ tags:
   - Text layout
   - Canvas
 links:
-  live: https://birlumbus.github.io/pretext-demo/
+  live: https://birlumbus.github.io/pretext/
 featured: true
 order: 1
 accent: '#d5ff3f'

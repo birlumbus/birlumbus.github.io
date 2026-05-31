@@ -43,7 +43,7 @@ const STARFIELD_TONES = [
 ];
 
 const state = {
-  shell: document.querySelector(".demo-shell"),
+  shell: document.querySelector(".starfield-shell"),
   host: document.querySelector("#starfield"),
   trigger: document.querySelector("[data-starfield-enter]"),
   canvas: null,

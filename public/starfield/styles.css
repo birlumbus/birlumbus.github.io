@@ -25,7 +25,7 @@ body {
   min-height: 100%;
 }
 
-.demo-shell {
+.starfield-shell {
   background: var(--space-bg);
   height: 100dvh;
   min-height: 100%;
@@ -54,7 +54,7 @@ body {
   width: 100%;
 }
 
-.demo-shell.is-revealed .starfield {
+.starfield-shell.is-revealed .starfield {
   opacity: 1;
 }
 
@@ -99,8 +99,8 @@ body {
   position: absolute;
 }
 
-.demo-shell.is-stopping-flight .flight-console,
-.demo-shell.is-revealed .flight-console {
+.starfield-shell.is-stopping-flight .flight-console,
+.starfield-shell.is-revealed .flight-console {
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, calc(-50% + 4px));

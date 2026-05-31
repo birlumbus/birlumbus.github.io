@@ -6,7 +6,7 @@ tags:
   - Generative Art
   - Interaction Design
 links:
-  live: https://birlumbus.github.io/starfield-demo/
+  live: https://birlumbus.github.io/starfield/
 featured: true
 order: 4
 accent: '#b9d8ff'
