@@ -1,5 +1,5 @@
 ---
-title: Starfield Demo
+title: starfield
 year: 2026
 tags:
   - Canvas
@@ -12,4 +12,4 @@ order: 4
 accent: '#b9d8ff'
 ---
 
-Starfield Demo is a dependency-free Canvas experiment with a spacecraft-style stop-flight module that reveals a dense deep-space starfield, depth-arrival animation, and subtle pointer-controlled camera motion.
+starfield is a dependency-free Canvas experiment with a spacecraft-style stop-flight module that reveals a dense deep-space starfield, depth-arrival animation, and subtle pointer-controlled camera motion.
