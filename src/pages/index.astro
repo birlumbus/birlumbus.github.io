@@ -15,7 +15,7 @@ const projects = (await getCollection('projects'))
   title="Projects"
   description="Projects."
 >
-  <main class="site-shell site-main">
+  <main class="site-shell site-main home-main">
     <section class="project-section" aria-label="projects">
       <div class="project-grid">
         {projects.map((project) => <ProjectCard project={project} />)}

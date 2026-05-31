@@ -95,6 +95,13 @@ p {
   padding-block: clamp(2rem, 6vw, 4rem) clamp(4rem, 10vw, 8rem);
 }
 
+.home-main {
+  display: grid;
+  align-items: center;
+  min-height: 100svh;
+  padding-block: clamp(4rem, 14vh, 8rem) clamp(3rem, 8vh, 5rem);
+}
+
 .project-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
