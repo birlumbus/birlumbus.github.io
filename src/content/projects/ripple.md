@@ -1,5 +1,5 @@
 ---
-title: floating chimes
+title: chimes
 year: 2026
 tags:
   - Web Audio
@@ -12,4 +12,4 @@ order: 2
 accent: '#5ee7ff'
 ---
 
-Floating chimes is a compact web experiment tuned for a lightweight, touch-friendly sound-and-motion loop.
+chimes is a compact web experiment tuned for a lightweight, touch-friendly sound-and-motion loop.
