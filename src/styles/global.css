@@ -86,20 +86,6 @@ p {
   text-decoration: none;
 }
 
-.site-title {
-  margin-bottom: 3rem;
-  font-size: calc(0.94rem * 1.3);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  text-align: center;
-  text-transform: lowercase;
-}
-
-.site-title a {
-  text-decoration: none;
-  color: inherit;
-}
-
 .project-card:hover .project-title,
 .project-card:focus-visible .project-title {
   color: var(--accent);

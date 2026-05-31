@@ -12,12 +12,11 @@ const projects = (await getCollection('projects'))
 ---
 
 <BaseLayout
-  title="things"
+  title="Projects"
   description="Projects."
 >
   <main class="site-shell site-main">
-    <h1 class="site-title"><a href="/">things</a></h1>
-    <section class="project-section" aria-label="things">
+    <section class="project-section" aria-label="projects">
       <div class="project-grid">
         {projects.map((project) => <ProjectCard project={project} />)}
       </div>
