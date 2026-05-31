@@ -6,6 +6,7 @@
   --panel-line-strong: rgba(220, 241, 244, 0.58);
   --panel-text: rgba(236, 245, 247, 0.94);
   --panel-muted: rgba(182, 206, 210, 0.66);
+  --button-blink-bg: #bdeaff;
 }
 
 * {
@@ -172,6 +173,7 @@ body {
 
 .flight-console__action {
   align-items: center;
+  animation: stopFlightButtonBlink 1.6s steps(1, end) infinite;
   background: #05090b;
   border: 1px solid var(--panel-line-strong);
   border-radius: 3px;
@@ -191,8 +193,24 @@ body {
 
 .flight-console__action:hover,
 .flight-console__action:focus-visible {
-  background: #091014;
   border-color: rgba(236, 245, 247, 0.84);
+}
+
+@keyframes stopFlightButtonBlink {
+  0%,
+  64%,
+  100% {
+    background: #05090b;
+    border-color: var(--panel-line-strong);
+    color: var(--panel-text);
+  }
+
+  65%,
+  82% {
+    background: var(--button-blink-bg);
+    border-color: rgba(236, 245, 247, 0.94);
+    color: #061014;
+  }
 }
 
 .sr-only {
@@ -212,6 +230,7 @@ body {
   .starfield,
   .flight-console,
   .flight-console__action {
+    animation: none !important;
     transition: none !important;
   }
 }
