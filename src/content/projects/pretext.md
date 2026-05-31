@@ -1,5 +1,5 @@
 ---
-title: jellyfish (pretext demo)
+title: jellyfish
 year: 2026
 tags:
   - TypeScript
