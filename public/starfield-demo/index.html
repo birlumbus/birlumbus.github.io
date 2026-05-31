@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>Starfield Demo</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="demo-shell" aria-label="Starfield demo">
+      <div id="starfield" class="starfield" aria-hidden="true"></div>
+      <section class="flight-console" aria-label="Spaceship flight console">
+        <div class="flight-console__header">
+          <span>SV-03 Meridian</span>
+          <span>Flight vector active</span>
+        </div>
+        <div class="flight-console__body">
+          <div class="flight-console__readouts" aria-label="Current flight status">
+            <span>Drift lock</span>
+            <span>Route RN-47</span>
+            <span>Manual stop armed</span>
+          </div>
+          <button class="entry-trigger flight-console__action" type="button" data-starfield-enter aria-label="Stop flight and enter starfield">
+            <span>Stop Flight</span>
+          </button>
+        </div>
+      </section>
+      <p class="sr-only">
+        Activate the page to reveal a full-screen dense starfield generated with canvas rendering and pointer-controlled camera rotation.
+      </p>
+    </main>
+    <script defer src="./starfield.js"></script>
+  </body>
+</html>

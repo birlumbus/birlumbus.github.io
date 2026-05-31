@@ -1,0 +1,234 @@
+:root {
+  color-scheme: dark;
+  --space-bg: #020308;
+  --panel-bg: rgba(4, 8, 10, 0.88);
+  --panel-line: rgba(186, 224, 229, 0.34);
+  --panel-line-strong: rgba(220, 241, 244, 0.58);
+  --panel-text: rgba(236, 245, 247, 0.94);
+  --panel-muted: rgba(182, 206, 210, 0.66);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--space-bg);
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100%;
+}
+
+.demo-shell {
+  background: var(--space-bg);
+  height: 100dvh;
+  min-height: 100%;
+  overflow: hidden;
+  position: relative;
+  width: 100vw;
+}
+
+.starfield {
+  background: var(--space-bg);
+  inset: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  transition: opacity 220ms linear;
+  touch-action: none;
+  z-index: 0;
+}
+
+.starfield-canvas {
+  display: block;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.demo-shell.is-revealed .starfield {
+  opacity: 1;
+}
+
+.flight-console {
+  color: var(--panel-text);
+  display: grid;
+  font-family: "Avenir Next", "Bahnschrift", "DIN Alternate", sans-serif;
+  gap: 0.72rem;
+  left: 50%;
+  letter-spacing: 0;
+  position: absolute;
+  text-transform: uppercase;
+  top: 54%;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 220ms ease,
+    transform 260ms ease;
+  width: min(72vw, 30rem);
+  z-index: 3;
+}
+
+.flight-console::before {
+  background: var(--panel-line);
+  bottom: 0;
+  content: "";
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 1px;
+}
+
+.flight-console::after {
+  background:
+    linear-gradient(90deg, var(--panel-line), transparent),
+    linear-gradient(90deg, var(--panel-line), transparent);
+  background-position: left top, left bottom;
+  background-repeat: no-repeat;
+  background-size: 2.6rem 1px, 2.6rem 1px;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.demo-shell.is-stopping-flight .flight-console,
+.demo-shell.is-revealed .flight-console {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-50% + 4px));
+}
+
+.flight-console__header {
+  align-items: center;
+  color: var(--panel-muted);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.75rem;
+  justify-content: space-between;
+  line-height: 1;
+  padding-left: 1rem;
+}
+
+.flight-console__header span:first-child {
+  color: var(--panel-text);
+}
+
+.flight-console__body {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-line);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 12px 28px rgba(0, 0, 0, 0.42);
+  display: grid;
+  gap: 0.82rem;
+  padding: 0.82rem 0.9rem 0.9rem;
+}
+
+.flight-console__readouts {
+  color: var(--panel-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.68rem;
+  font-weight: 700;
+  gap: 0.42rem 0.85rem;
+  line-height: 1;
+}
+
+.flight-console__readouts span {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.38rem;
+}
+
+.flight-console__readouts span::before {
+  background: var(--panel-line-strong);
+  content: "";
+  display: inline-block;
+  height: 0.28rem;
+  width: 0.28rem;
+}
+
+.entry-trigger {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  margin: 0;
+}
+
+.entry-trigger:focus-visible {
+  outline: 1px solid rgba(236, 245, 247, 0.78);
+  outline-offset: 4px;
+}
+
+.flight-console__action {
+  align-items: center;
+  background: #05090b;
+  border: 1px solid var(--panel-line-strong);
+  border-radius: 3px;
+  color: var(--panel-text);
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 700;
+  justify-self: start;
+  line-height: 1;
+  padding: 0.56rem 0.78rem 0.6rem;
+  text-transform: uppercase;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+  white-space: nowrap;
+}
+
+.flight-console__action:hover,
+.flight-console__action:focus-visible {
+  background: #091014;
+  border-color: rgba(236, 245, 247, 0.84);
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield,
+  .flight-console,
+  .flight-console__action {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .flight-console {
+    top: 55%;
+    width: min(88vw, 24rem);
+  }
+
+  .flight-console__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.38rem;
+  }
+
+  .flight-console__body {
+    padding: 0.78rem;
+  }
+}
