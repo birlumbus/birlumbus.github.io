@@ -12,4 +12,4 @@ order: 5
 accent: '#aebfc1'
 ---
 
-A playable pixel trebuchet with coupled mechanics, tunable projectiles and a destructible wall.
+a probably bad trebuchet simulation
