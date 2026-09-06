@@ -21,3 +21,5 @@ npm run preview
 Project entries live in `src/content/projects`. Add a new markdown file with frontmatter matching the collection schema in `src/content.config.ts`.
 
 Deploys run from `.github/workflows/deploy.yml` after pushes to `main`.
+
+Trebuchet is maintained separately in `birlumbus/trebuchet`. Its generated files live in `public/trebuchet/`; `build.json` identifies the source revision. To update it, run `npm run export:portfolio -- /path/to/this/checkout` from the Trebuchet repository, then build and publish this site as usual.
