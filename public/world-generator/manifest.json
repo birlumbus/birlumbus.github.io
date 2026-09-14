@@ -4,7 +4,7 @@
   "preview": "preview.json",
   "pyodideUrl": "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/",
   "pyodideVersion": "0.28.3",
-  "release": "web2-a33465b48e3ba24d",
+  "release": "web2-d15967074758143e",
   "sourceSha256": "0306c53d36d1588d0b7f42a29738d1bd7b50af998688edd1309cfb63504d403c",
   "starter": "starter.json"
 }

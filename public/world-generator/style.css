@@ -1,7 +1,7 @@
 :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #e4edf1; background: #050d17; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; overflow: hidden; }
-#world { position: fixed; inset: 0; background: radial-gradient(ellipse at 43% 45%, #112332, #050d17 72%); }
+#world { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 45%, #112332, #050d17 72%); }
 #globe { display: block; width: 100%; height: 100%; touch-action: none; }
 #empty { position: absolute; inset: 0; display: grid; place-items: center; color: #91a9b7; font-size: 14px; pointer-events: none; }
 .toolbar { position: fixed; top: 20px; left: 24px; right: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; pointer-events: none; }
@@ -28,13 +28,14 @@ button.primary:hover:enabled { background: #a8e6e1; }
 #status { position: fixed; top: 72px; left: 25px; max-width: min(650px, calc(100% - 50px)); margin: 0; padding: 7px 10px; border-radius: 5px; background: #0b1a28ee; color: #aac2cc; font-size: 12px; line-height: 1.5; }
 #status.error { color: #ffb4aa; }
 #panel { position: fixed; right: 24px; top: 94px; width: 216px; border: 1px solid #2c4251; border-radius: 10px; background: #0b1a28e8; backdrop-filter: blur(12px); overflow: hidden; }
-#display { padding: 15px; }
+.display-controls { padding: 15px; }
+#display { padding: 0; }
 summary { font-size: 12px; color: #c9d9e1; cursor: pointer; list-style: none; display: flex; justify-content: space-between; }
 summary::-webkit-details-marker { display: none; }
 summary::after { content: '+'; color: #819cae; }
 details[open] summary::after { content: '−'; }
 .display-content { padding-top: 17px; }
-select { width: 100%; height: 35px; padding: 0 8px; margin-bottom: 20px; font-size: 12px; }
+select { width: 100%; height: 35px; padding: 0 8px; margin-bottom: 14px; font-size: 12px; }
 .range-label { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #9bb2bf; }
 output { font-size: 12px; color: #80d4d1; font-variant-numeric: tabular-nums; }
 #exaggeration { width: 100%; margin: 16px 0; height: 4px; accent-color: #80d4d1; cursor: pointer; }
@@ -60,7 +61,7 @@ output { font-size: 12px; color: #80d4d1; font-variant-numeric: tabular-nums; }
   #reset { min-height: 38px; height: 38px; width: 38px; }
   #status { top: 164px; left: 14px; max-width: calc(100% - 28px); font-size: 11px; }
   #panel { top: auto; bottom: 14px; right: 14px; width: 190px; max-height: 48dvh; overflow: auto; }
-  #display { padding: 12px; }
+  .display-controls { padding: 12px; }
   #legend { padding: 13px 12px; }
 }
 @media (max-width: 410px) {
@@ -86,4 +87,43 @@ body.loading #world, body.loading .toolbar, body.loading #panel { visibility: hi
 @media (max-height: 450px) and (min-width: 621px) {
   #intro-globe { width: 210px; height: 210px; }
   .intro-content { grid-template-columns: 210px 300px; gap: 32px; width: 550px; }
+}
+
+#height-key { min-width: 0; }
+.height-title { display: block; font-size: 11px; margin-bottom: 10px; }
+.height-gradient { height: 9px; border-radius: 3px; background: linear-gradient(90deg, #251538, #66347f 25%, #b34f79 50%, #ea9161 75%, #f9e5ae); }
+.height-labels { display: flex; justify-content: space-between; gap: 18px; margin-top: 7px; color: #c1d1db; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+/* Keep the map clear; its small control dock sits below the fitted surface. */
+body.map-view #panel { top: auto; bottom: 20px; right: auto; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 48px); display: flex; align-items: center; overflow: visible; }
+body.map-view .display-controls { display: flex; align-items: center; gap: 14px; padding: 14px; }
+body.map-view #colour { width: 124px; margin: 0; }
+body.map-view #display { position: relative; }
+body.map-view #display summary { gap: 12px; min-height: 34px; align-items: center; }
+body.map-view .display-content { position: absolute; bottom: calc(100% + 24px); right: 0; width: 184px; padding: 16px; background: #102230; border: 1px solid #354b5b; border-radius: 8px; }
+body.map-view #relief-control { display: none; }
+body.map-view #legend { display: flex; align-items: center; gap: 24px; padding: 14px 18px; border-top: 0; border-left: 1px solid #263b4a; }
+body.map-view #terrain-key { display: grid; grid-template-columns: auto auto auto; column-gap: 18px; row-gap: 5px; align-items: center; }
+body.map-view .legend-item { margin: 0; }
+body.map-view #terrain-key .legend-item:first-child { grid-column: 1; grid-row: 1; }
+body.map-view .metric { grid-column: 1; grid-row: 2; margin: 0 0 0 17px; }
+body.map-view #terrain-key .legend-item:nth-child(3) { grid-column: 2; grid-row: 1 / 3; }
+body.map-view #terrain-key .legend-item:nth-child(4) { grid-column: 3; grid-row: 1 / 3; }
+body.map-view .elevation-range { padding: 0; }
+body.map-view #height-key { width: 310px; }
+body.map-view #alternate-key { max-width: 280px; }
+@media (max-width: 899px) {
+  body.map-view #panel { bottom: 14px; max-width: calc(100% - 28px); flex-wrap: wrap; justify-content: center; }
+  body.map-view .display-controls { justify-content: center; padding: 10px 12px; }
+  body.map-view #legend { border-left: 0; padding: 10px 12px; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  body.map-view #terrain-key { column-gap: 12px; }
+  body.map-view .elevation-range { display: flex; gap: 7px; align-items: center; }
+  body.map-view #height-key { width: 280px; }
+}
+@media (min-width: 621px) and (max-width: 899px) {
+  .toolbar { flex-wrap: nowrap; align-items: flex-start; }
+  form { width: auto; max-width: calc(100% - 200px); }
+  .seed-field { width: 235px; }
+  .view-tools { width: auto; }
+  #status { top: 124px; }
 }

@@ -42,7 +42,10 @@ function updateUrl() {
   history.replaceState(null, '', url);
 }
 function selectView(view) {
+  document.body.classList.toggle('map-view',view==='map');
   renderer?.setView(view);
+  adapt();
+  fitMap();
   el('view-globe').setAttribute('aria-pressed',String(view === 'globe'));
   el('view-map').setAttribute('aria-pressed',String(view === 'map'));
   updateUrl();
@@ -54,6 +57,8 @@ function show(scene) {
   el('sea-level').textContent = scene.metadata.seaLevelM.toFixed(2) + ' m';
   const metres = value => Math.round(value).toLocaleString('en-US').replace('-', '−');
   el('elevation-range').textContent = `${metres(scene.metadata.elevationMinM)} to ${metres(scene.metadata.elevationMaxM)} m`;
+  el('height-low').textContent=metres(scene.metadata.elevationMinM)+' m';
+  el('height-high').textContent=metres(scene.metadata.elevationMaxM)+' m';
   el('empty').hidden = true;
   updateUrl();
 }
@@ -127,8 +132,10 @@ el('colour').onchange=()=>{
   const mode=Number(el('colour').value);
   renderer?.setOptions({mode});
   el('terrain-key').hidden=mode>=2;
-  el('alternate-key').hidden=mode<2;
-  el('alternate-key').textContent = mode===2?'Colour shows elevation above or below 0 m.':mode===3?'Each colour is an initial plate.':mode===4?'Blue · oceanic crust\nGold · continental crust':'';
+  el('alternate-key').hidden=mode<3;
+  el('height-key').hidden=mode!==2;
+  el('elevation-range').parentElement.hidden=mode===2;
+  el('alternate-key').textContent = mode===3?'Each colour is an initial plate.':mode===4?'Blue · oceanic crust\nGold · continental crust':'';
 };
 el('exaggeration').oninput=()=>{
   const exaggeration=Number(el('exaggeration').value);
@@ -136,8 +143,18 @@ el('exaggeration').oninput=()=>{
 };
 el('boundaries').onchange=()=>renderer?.setOptions({boundaries:el('boundaries').checked});
 const compact=matchMedia('(max-width: 899px)');
-const adapt=()=>{el('display').open=!compact.matches;};
+const adapt=()=>{el('display').open=!compact.matches && renderer?.view!=='map';};
 adapt();compact.addEventListener('change',adapt);
+function fitMap() {
+  if(renderer?.view!=='map')return;
+  const top=document.querySelector('.toolbar').getBoundingClientRect().bottom+24;
+  const bottom=innerHeight-el('panel').getBoundingClientRect().top+24;
+  renderer.setOptions({mapInsets:{top,bottom}});
+}
+const layoutObserver=new ResizeObserver(fitMap);
+layoutObserver.observe(document.querySelector('.toolbar'));
+layoutObserver.observe(el('panel'));
+window.addEventListener('resize',fitMap);
 async function starterScene() {
   if(seed.value!=='42' || !manifest.starter)return null;
   try {
