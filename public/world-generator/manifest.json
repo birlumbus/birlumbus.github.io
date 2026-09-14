@@ -1,0 +1,8 @@
+{
+  "archive": "engine-a16d800ca50f6bee.zip",
+  "numpyVersion": "2.2.5",
+  "pyodideUrl": "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/",
+  "pyodideVersion": "0.28.3",
+  "release": "web1-cf4429f442b1f702",
+  "sourceSha256": "a16d800ca50f6bee9742818523c30a53747d16016c4af7a63014295b7451fff1"
+}
