@@ -67,3 +67,23 @@ output { font-size: 12px; color: #80d4d1; font-variant-numeric: tabular-nums; }
   button { font-size: 12px; padding: 0 12px; }
   .view-switch button { font-size: 11px; padding: 0 12px; }
 }
+
+/* The first screen is just the subject itself and a short explanation. */
+body.loading #world, body.loading .toolbar, body.loading #panel { visibility: hidden; }
+#intro { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at 38% 48%, #122a38 0, #07111c 48%, #050d17 82%); }
+.intro-content { display: grid; grid-template-columns: 260px minmax(0, 320px); align-items: center; gap: 50px; width: min(690px, calc(100% - 48px)); }
+#intro-globe { display: block; width: 260px; height: 260px; }
+.intro-copy h1 { font-size: clamp(24px, 3vw, 30px); line-height: 1.2; font-weight: 450; letter-spacing: -.6px; margin: 0 0 14px; text-wrap: balance; }
+.intro-copy p { font-size: 14px; line-height: 1.7; color: #9bb2bf; margin: 0; max-width: 300px; }
+#intro-cancel { color: #9bb2bf; background: none; border: 0; padding: 0; margin-top: 18px; min-height: 36px; font-size: 12px; }
+#intro-cancel:hover { color: #e4edf1; background: none; }
+@media (max-width: 620px) {
+  .intro-content { grid-template-columns: 1fr; gap: 22px; width: min(320px, calc(100% - 48px)); justify-items: center; }
+  .intro-copy { text-align: center; }
+  #intro-globe { width: 230px; height: 230px; }
+  .intro-copy p { font-size: 13px; }
+}
+@media (max-height: 450px) and (min-width: 621px) {
+  #intro-globe { width: 210px; height: 210px; }
+  .intro-content { grid-template-columns: 210px 300px; gap: 32px; width: 550px; }
+}

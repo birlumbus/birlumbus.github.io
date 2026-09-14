@@ -30,14 +30,15 @@ world. The address records the displayed seed and view.
 ## Runtime and starter world
 
 New worlds run the packaged Python engine in a Web Worker using pinned Pyodide
-0.28.3 and NumPy 2.2.5 from jsDelivr. The first generation downloads that runtime;
-network caches help later runs. The worker is terminated after each result to
-release its memory. Generation remains much heavier than interactive rendering:
+0.28.3 and NumPy 2.2.5 from jsDelivr. The opening screen downloads and prepares
+that runtime beside a slowly rotating miniature of seed 42. The ready worker is
+reused for the first generation; subsequent results terminate their worker to
+release memory. Browser network caches help later starts. Generation remains much heavier than interactive rendering:
 standard M3 took about 34 seconds in the tested desktop browser. Other devices
 will vary. WebGL 2 and HTTPS (or localhost) are required.
 
-Seed 42 can open immediately from `starter.json`, an actual browser-generated
-result. It is included only when its source archive SHA-256 and runtime versions
+After setup, seed 42 opens without generation from `starter.json`, an actual
+browser-generated result. It is included only when its source archive SHA-256 and runtime versions
 match the build. A changed engine invalidates the starter; the demo then generates
 normally. To refresh it, generate seed 42 through the pinned worker and save an
 object containing `sourceSha256`, `pyodideVersion`, `numpyVersion`, and `scene`
@@ -52,3 +53,10 @@ versions of the generator.
 
 Build outputs contain only known assets. Obsolete engine archives may remain
 in a reused local output directory, but are excluded from the release zip.
+
+The builder derives `preview.json` from the cached starter's level-3 parent mesh:
+642 samples and fewer than 70 KB, with no new terrain simulation. This miniature
+is just the loading illustration; full-resolution views still use the complete
+scene. Intro rotation respects reduced motion and stops when the intro closes.
+Controls remain hidden and inert until setup finishes. Cancel interrupts setup
+or generation. Network failures restore the controls with a retry message.
