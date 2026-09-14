@@ -76,8 +76,6 @@ body.loading #world, body.loading .toolbar, body.loading #panel { visibility: hi
 #intro-globe { display: block; width: 260px; height: 260px; }
 .intro-copy h1 { font-size: clamp(24px, 3vw, 30px); line-height: 1.2; font-weight: 450; letter-spacing: -.6px; margin: 0 0 14px; text-wrap: balance; }
 .intro-copy p { font-size: 14px; line-height: 1.7; color: #9bb2bf; margin: 0; max-width: 300px; }
-#intro-cancel { color: #9bb2bf; background: none; border: 0; padding: 0; margin-top: 18px; min-height: 36px; font-size: 12px; }
-#intro-cancel:hover { color: #e4edf1; background: none; }
 @media (max-width: 620px) {
   .intro-content { grid-template-columns: 1fr; gap: 22px; width: min(320px, calc(100% - 48px)); justify-items: center; }
   .intro-copy { text-align: center; }
