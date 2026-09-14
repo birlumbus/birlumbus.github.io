@@ -1,5 +1,6 @@
 import {buildSurfaceGeometry, buildLineGeometry, STRIDE} from './geometry.js';
 import {vertex, fragment} from './shaders.js';
+import {mapFraming} from './layout.js';
 
 const decode = (value, Type) => {
   const raw = atob(value), bytes = new Uint8Array(raw.length);
@@ -41,7 +42,7 @@ export class WorldRenderer {
     gl.deleteShader(vs);gl.deleteShader(fs);
     if(!gl.getProgramParameter(this.program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(this.program));
     this.uniforms={};
-    for (const name of ['mvp','rotation','mapTransform','radius','exaggeration','flat','mode','lines','contours']) this.uniforms[name]=gl.getUniformLocation(this.program,'u_'+name);
+    for (const name of ['mvp','rotation','mapTransform','elevationRange','radius','exaggeration','flat','mode','lines','contours']) this.uniforms[name]=gl.getUniformLocation(this.program,'u_'+name);
     this.attributes=[['a_position',3,0],['a_gradient',3,3],['a_surface',4,6],['a_region',2,10],['a_map',2,12],['a_categories',3,14],['a_barycentric',2,17]].map(([name,size,offset])=>({index:gl.getAttribLocation(this.program,name),size,offset}));
   }
 
@@ -101,19 +102,19 @@ export class WorldRenderer {
     const gl=this.gl, rect=this.canvas.getBoundingClientRect(), dpr=Math.min(2,devicePixelRatio||1);
     const width=Math.round(rect.width*dpr),height=Math.round(rect.height*dpr);
     if(this.canvas.width!==width||this.canvas.height!==height){this.canvas.width=width;this.canvas.height=height;}
-    const sceneWidth=rect.width>=900?rect.width-260:rect.width;
-    const vw=Math.round(sceneWidth*dpr), aspect=vw/height;
-    gl.viewport(0,0,vw,height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    const aspect=width/height;
+    gl.viewport(0,0,width,height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);gl.enable(gl.DEPTH_TEST);
     const flat=this.view==='map';
     if(flat)gl.disable(gl.CULL_FACE);else{gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);}
     const rotation=mul(rx(this.pitch),ry(this.yaw));
     const distance=Math.max(1.12,Math.max(3.05,2.65/aspect)/this.globeZoom);
     const mvp=mul(perspective(aspect),mul(translate(-distance),rotation));
-    const fit=Math.min(sceneWidth/(2*Math.PI),rect.height/Math.PI)*.9;
+    const framing=mapFraming(rect.width,rect.height,this.options.mapInsets);
     gl.uniformMatrix4fv(this.uniforms.mvp,false,mvp);
     gl.uniformMatrix4fv(this.uniforms.rotation,false,rotation);
-    gl.uniform4f(this.uniforms.mapTransform,fit*2/sceneWidth*this.mapZoom,fit*2/rect.height*this.mapZoom,...this.pan);
+    gl.uniform4f(this.uniforms.mapTransform,framing.scale[0]*this.mapZoom,framing.scale[1]*this.mapZoom,this.pan[0],this.pan[1]+framing.offsetY);
+    gl.uniform2f(this.uniforms.elevationRange,this.scene.metadata.elevationMinM,this.scene.metadata.elevationMaxM);
     gl.uniform1f(this.uniforms.radius,this.scene.metadata.radiusM);
     gl.uniform1f(this.uniforms.exaggeration,this.options.exaggeration);
     gl.uniform1i(this.uniforms.flat,flat?1:0);
@@ -150,8 +151,7 @@ export class WorldRenderer {
       } else if(pointers.size===1){
         const dx=e.clientX-old[0],dy=e.clientY-old[1];
         if(this.view==='map'){
-          const width=canvas.clientWidth>=900?canvas.clientWidth-260:canvas.clientWidth;
-          this.pan[0]+=dx*2/width;this.pan[1]-=dy*2/canvas.clientHeight;
+          this.pan[0]+=dx*2/canvas.clientWidth;this.pan[1]-=dy*2/canvas.clientHeight;
         } else {this.yaw+=dx*.006;this.pitch=clamp(this.pitch+dy*.006,-1.5,1.5);}
         this.schedule();
       }

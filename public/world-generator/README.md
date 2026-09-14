@@ -24,7 +24,9 @@ The seed field's copy icon copies just the seed. All unsigned 64-bit integers
 are supported, from 0 through 18446744073709551615. Globe / 2D map switches views
 immediately; the reset icon restores framing. Keyboard controls on the canvas
 are arrow keys, +/− and Home. Display holds the colour, vertical exaggeration
-and plate boundary controls. Cancel stops generation and preserves the current
+and plate boundary controls. Both views are horizontally centered on the page.
+The 2D map fits between the toolbar and a compact bottom dock; its extra options
+are collapsed and its exaggeration slider is hidden. Cancel stops generation and preserves the current
 world. The address records the displayed seed and view.
 
 ## Runtime and starter world
@@ -60,3 +62,9 @@ is just the loading illustration; full-resolution views still use the complete
 scene. Intro rotation respects reduced motion and stops when the intro closes.
 Controls remain hidden and inert until setup finishes. Cancel interrupts setup
 or generation. Network failures restore the controls with a retry message.
+
+Elevation uses a distinct violet-to-gold scale over the entire surface, including
+the ocean floor. Colours span the current world's minimum and maximum absolute
+elevation, shown in metres in the gradient legend. Ocean and basin masks do not
+change this view; map colours are unaffected by terrain shading, and the globe
+uses only gentle sphere lighting. Contours remain at 500-metre intervals.

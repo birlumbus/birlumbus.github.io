@@ -51,6 +51,7 @@ uniform float u_radius;
 uniform float u_exaggeration;
 uniform bool u_flat;
 uniform bool u_contours;
+uniform vec2 u_elevationRange;
 uniform int u_mode;
 uniform int u_lines;
 out vec4 colour;
@@ -65,6 +66,13 @@ vec3 land(float height) {
   return blend(vec3(177,126,64),vec3(104,55,36),(height-3500.)/5500.)/255.;
 }
 vec3 plate(float n) { return .3+.65*vec3(fract(sin(n*12.9898)*43758.5453),fract(sin(n*78.233+2.)*43758.5453),fract(sin(n*39.425+4.)*43758.5453)); }
+vec3 elevation(float metres) {
+  float t=clamp((metres-u_elevationRange.x)/max(1.,u_elevationRange.y-u_elevationRange.x),0.,1.);
+  if(t<.25)return blend(vec3(37,21,56),vec3(102,52,127),t*4.)/255.;
+  if(t<.5)return blend(vec3(102,52,127),vec3(179,79,121),(t-.25)*4.)/255.;
+  if(t<.75)return blend(vec3(179,79,121),vec3(234,145,97),(t-.5)*4.)/255.;
+  return blend(vec3(234,145,97),vec3(249,229,174),(t-.75)*4.)/255.;
+}
 void main() {
   if (u_flat && abs(v_map.x)>3.141593) discard;
   if (u_lines > 0) {
@@ -81,7 +89,7 @@ void main() {
   vec3 c = connectedOcean ? ocean(-h) : land(h);
   if (basin) c = vec3(144,65,177)/255.;
   if (u_mode==1) c=basin?vec3(.56,.25,.69):(connectedOcean?vec3(.11,.41,.74):vec3(.57,.67,.29));
-  if (u_mode==2) c=v_surface.x<0.?ocean(-v_surface.x):land(v_surface.x);
+  if (u_mode==2) c=elevation(v_surface.x);
   vec3 weights = vec3(v_barycentric,1.-v_barycentric.x-v_barycentric.y);
   float category = weights.x>=weights.y && weights.x>=weights.z ? v_categories.x : weights.y>=weights.z ? v_categories.y : v_categories.z;
   if (u_mode==3) c=plate(mod(category,256.));
@@ -107,7 +115,12 @@ void main() {
       float line = 1.-smoothstep(0.,max(.0001,fwidth(level)*.7),d);
       c *= 1.-line*.13;
     }
-    c *= shade;
+    if(u_mode==0)c *= shade;
+    // Elevation colours encode height alone; only the globe gets gentle sphere lighting.
+    else if(!u_flat){
+      vec3 radialNormal=normalize(mat3(u_rotation)*vec3(p.y,p.z,p.x));
+      c *= .82+.18*max(0.,dot(radialNormal,normalize(vec3(-.45,.65,1.))));
+    }
   } else if (!u_flat) c *= .85+.15*shade;
   colour=vec4(c,1.);
 }`;
