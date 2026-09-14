@@ -8,7 +8,7 @@ const intro=new LoadingIntro();
 
 function report(text, error = false, temporary = false, phase = 'loading') {
   clearTimeout(hideTimer);
-  message = phase==='generating' && !error ? `${text} · Usually takes 30–60 seconds.` : text;
+  message = phase==='generating' && !error ? `${text} · Usually takes 5–15 seconds.` : text;
   if (!intro.root.hidden && !error) {intro.setPhase(phase);return;}
   el('status').hidden = false;
   el('status').classList.toggle('error', error);
@@ -70,13 +70,15 @@ function stopWorker() {
 function ensureWorker() {
   if(worker)return;
   worker=new Worker(new URL('./worker.js',import.meta.url));
+  const activeWorker=worker;
   let phase='loading';
   const rejectOrFail=message=>{
     if(readyReject){const reject=readyReject;readyResolve=readyReject=undefined;reject(new Error(message));}
     else fail(message);
   };
-  worker.onerror=event=>{event.preventDefault();rejectOrFail('The generator could not load. Check your connection and try again.');};
+  worker.onerror=event=>{event.preventDefault();if(worker===activeWorker)rejectOrFail('The generator could not load. Check your connection and try again.');};
   worker.onmessage=({data})=>{
+    if(worker!==activeWorker)return;
     if(data.type==='status'){phase=data.phase;report(data.message,false,false,data.phase);}
     if(data.type==='error'){
       console.error(data.message);
@@ -86,7 +88,7 @@ function ensureWorker() {
       const resolve=readyResolve;readyResolve=readyReject=undefined;resolve?.();
     }
     if(data.type==='result'){
-      stopWorker();setBusy(false);
+      setBusy(false);
       try {show(data.result);intro.hide();report(`Generated in ${data.result.seconds.toFixed(1)}s.`,false,true);}
       catch(error){console.error(error);fail('The world could not be displayed. Reload and try again.');}
     }
