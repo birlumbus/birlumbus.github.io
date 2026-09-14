@@ -9,7 +9,7 @@ const intro=new LoadingIntro();
 function report(text, error = false, temporary = false, phase = 'loading') {
   clearTimeout(hideTimer);
   message = phase==='generating' && !error ? `${text} · Usually takes 30–60 seconds.` : text;
-  if (!intro.root.hidden && !error) {intro.setStatus(text,phase);return;}
+  if (!intro.root.hidden && !error) {intro.setPhase(phase);return;}
   el('status').hidden = false;
   el('status').classList.toggle('error', error);
   el('status').textContent = message;
@@ -120,7 +120,6 @@ function cancel() {
   report('Cancelled.',false,true);
 }
 el('cancel').onclick=cancel;
-el('intro-cancel').onclick=cancel;
 el('copy-seed').onclick=async()=>{
   try {await navigator.clipboard.writeText(seed.value);report('Seed copied.',false,true);}
   catch {seed.focus();seed.select();report('Seed selected. Press copy.',false,true);}

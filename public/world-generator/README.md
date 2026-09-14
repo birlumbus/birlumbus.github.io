@@ -19,7 +19,7 @@ Preview with `python -m http.server 8000 --directory dist` and open
 
 ## Use
 
-Enter a decimal seed, choose Generate world or Random world, then drag and zoom.
+Enter a decimal seed, choose generate or random seed, then drag and zoom.
 The seed field's copy icon copies just the seed. All unsigned 64-bit integers
 are supported, from 0 through 18446744073709551615. Globe / 2D map switches views
 immediately; the reset icon restores framing. Keyboard controls on the canvas
@@ -61,8 +61,9 @@ The builder derives `preview.json` from the cached starter's level-3 parent mesh
 642 samples and fewer than 70 KB, with no new terrain simulation. This miniature
 is just the loading illustration; full-resolution views still use the complete
 scene. Intro rotation respects reduced motion and stops when the intro closes.
-Controls remain hidden and inert until setup finishes. Cancel interrupts setup
-or generation. Network failures restore the controls with a retry message.
+Controls remain hidden and inert until setup finishes. The loading screen says
+“Loading... the world” with “world” in italics. Cancel is available when generating
+from an existing world. Network failures restore the controls with a retry message.
 
 Elevation uses a distinct violet-to-gold scale over the entire surface, including
 the ocean floor. Colours span the current world's minimum and maximum absolute

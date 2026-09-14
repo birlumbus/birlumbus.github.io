@@ -3,7 +3,6 @@ import {WorldRenderer} from './renderer.js';
 export class LoadingIntro {
   constructor() {
     this.root=document.getElementById('intro');
-    this.title=document.getElementById('intro-title');
     this.note=document.getElementById('intro-note');
     this.motion=matchMedia('(prefers-reduced-motion: reduce)');
     this.updateMotion=()=>this.renderer?.setAutoRotate(!this.motion.matches && !this.root.hidden);
@@ -30,12 +29,11 @@ export class LoadingIntro {
     this.root.hidden=false;document.body.classList.add('loading');
     for(const selector of ['#world','.toolbar','#panel'])document.querySelector(selector).inert=true;
     document.getElementById('status').hidden=true;
-    this.setStatus('Loading the world generator');
+    this.setPhase();
     this.renderPreview();
   }
-  setStatus(message,phase='loading') {
+  setPhase(phase='loading') {
     const generating=phase==='generating';
-    this.title.textContent=generating?'Generating world':'Loading the world generator';
     this.note.hidden=!generating;
     this.note.textContent=generating?'Usually takes 30–60 seconds.':'';
   }
