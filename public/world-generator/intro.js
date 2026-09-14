@@ -34,10 +34,10 @@ export class LoadingIntro {
     this.renderPreview();
   }
   setStatus(message,phase='loading') {
-    this.title.textContent=message;
-    this.note.textContent=phase==='generating'
-      ? 'The generator is ready. Adding terrain and oceans.'
-      : 'The first visit includes a download. Next worlds start faster.';
+    const generating=phase==='generating';
+    this.title.textContent=generating?'Generating world':'Loading the world generator';
+    this.note.hidden=!generating;
+    this.note.textContent=generating?'Usually takes 30–60 seconds.':'';
   }
   hide() {
     this.root.hidden=true;document.body.classList.remove('loading');

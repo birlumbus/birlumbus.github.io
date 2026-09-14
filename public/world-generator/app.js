@@ -8,11 +8,11 @@ const intro=new LoadingIntro();
 
 function report(text, error = false, temporary = false, phase = 'loading') {
   clearTimeout(hideTimer);
-  message = text;
+  message = phase==='generating' && !error ? `${text} · Usually takes 30–60 seconds.` : text;
   if (!intro.root.hidden && !error) {intro.setStatus(text,phase);return;}
   el('status').hidden = false;
   el('status').classList.toggle('error', error);
-  el('status').textContent = text;
+  el('status').textContent = message;
   if (temporary) hideTimer = setTimeout(() => {el('status').hidden = true;}, 3500);
 }
 function setBusy(value) {
