@@ -18,16 +18,18 @@ const perspective = aspect => {const f=1/Math.tan(.41),near=.025,far=40,nf=1/(ne
 const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
 
 export class WorldRenderer {
-  constructor(canvas, onError) {
+  constructor(canvas, onError, {interactive=true}={}) {
     this.canvas=canvas; this.onError=onError;
     this.gl=canvas.getContext('webgl2',{alpha:true,antialias:true});
     if (!this.gl) throw new Error('This view needs WebGL 2. Try a current browser with graphics acceleration enabled.');
     this.options={mode:0,exaggeration:32,contours:true,boundaries:false};
     this.view='globe'; this.buffers=[]; this.pending=false; this.reset();
-    this.setup(); this.interactions();
+    this.setup(); if(interactive)this.interactions();
     this.observer=new ResizeObserver(()=>this.schedule()); this.observer.observe(canvas);
-    canvas.addEventListener('webglcontextlost', event => {event.preventDefault();this.onError('Graphics paused. Reload the page to restore the world.');});
-    canvas.addEventListener('webglcontextrestored',()=>{this.setup();if(this.scene)this.load(this.scene);});
+    this.contextLost=event=>{event.preventDefault();if(!this.disposed)this.onError('Graphics paused. Reload the page to restore the world.');};
+    this.contextRestored=()=>{if(this.disposed)return;this.setup();if(this.scene)this.load(this.scene);};
+    canvas.addEventListener('webglcontextlost',this.contextLost);
+    canvas.addEventListener('webglcontextrestored',this.contextRestored);
   }
 
   setup() {
@@ -68,7 +70,25 @@ export class WorldRenderer {
   setView(view) {this.view=view;this.canvas.setAttribute('aria-label',view==='map'?'Interactive 2D world map':'Interactive world globe');this.schedule();}
   setOptions(options) {Object.assign(this.options,options);this.schedule();}
   reset() {[this.yaw,this.pitch]=this.focus??[-1.15,.18];this.globeZoom=1;this.mapZoom=1;this.pan=[0,0];this.schedule();}
-  schedule() {if(!this.pending){this.pending=true;requestAnimationFrame(()=>{this.pending=false;this.draw();});}}
+  setAutoRotate(value) {this.autoRotate=value;this.lastFrame=undefined;this.schedule();}
+  schedule() {
+    if(this.pending || this.disposed)return;
+    this.pending=true;
+    this.frame=requestAnimationFrame(time=>{
+      this.pending=false;
+      if(this.autoRotate && this.lastFrame!==undefined)this.yaw+=Math.min(time-this.lastFrame,100)*.00012;
+      this.lastFrame=time;this.draw();
+      if(this.autoRotate)this.schedule();
+    });
+  }
+  dispose() {
+    this.disposed=true;this.autoRotate=false;cancelAnimationFrame(this.frame);
+    this.observer.disconnect();
+    this.canvas.removeEventListener('webglcontextlost',this.contextLost);
+    this.canvas.removeEventListener('webglcontextrestored',this.contextRestored);
+    for(const buffer of this.buffers)this.gl.deleteBuffer(buffer);
+    this.gl.deleteProgram(this.program);this.buffers=[];this.surface=null;
+  }
 
   drawGeometry(geometry, primitive) {
     const gl=this.gl;gl.bindBuffer(gl.ARRAY_BUFFER,geometry.buffer);

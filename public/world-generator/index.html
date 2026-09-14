@@ -9,12 +9,24 @@
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
 </head>
-<body>
-  <main id="world" aria-busy="true">
+<body class="loading">
+  <section id="intro" aria-label="Loading the world generator">
+    <div class="intro-content">
+      <canvas id="intro-globe" aria-hidden="true"></canvas>
+      <div class="intro-copy">
+        <div role="status" aria-live="polite">
+          <h1 id="intro-title">Loading the world generator</h1>
+          <p id="intro-note">The first visit includes a download. Next worlds start faster.</p>
+        </div>
+        <button id="intro-cancel" type="button">Cancel</button>
+      </div>
+    </div>
+  </section>
+  <main id="world" aria-busy="true" inert>
     <canvas id="globe" tabindex="0" aria-label="Interactive world globe"></canvas>
     <div id="empty" role="status">Loading world…</div>
   </main>
-  <div class="toolbar">
+  <div class="toolbar" inert>
     <form id="generator">
       <div class="seed-field">
         <label for="seed">World seed</label>
@@ -34,7 +46,7 @@
     </div>
   </div>
   <p id="status" role="status" aria-live="polite" hidden></p>
-  <aside id="panel" aria-label="Display and legend">
+  <aside id="panel" aria-label="Display and legend" inert>
     <details id="display" open>
       <summary>Display</summary>
       <div class="display-content">
