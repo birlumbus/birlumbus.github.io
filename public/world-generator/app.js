@@ -1,114 +1,133 @@
+import {WorldRenderer} from './renderer.js';
 const el = id => document.getElementById(id);
-const form = el('generator'), seed = el('seed'), mode = el('mode');
-let manifest, worker, current, busy = false, timer, began, message = '', downloadUrl;
+const seed = el('seed');
+let manifest, renderer, worker, current, busy = false, timer, hideTimer, began, message = '';
 
-function report(text, error = false) {
+function report(text, error = false, temporary = false) {
+  clearTimeout(hideTimer);
   message = text;
+  el('status').hidden = false;
   el('status').classList.toggle('error', error);
   el('status').textContent = text;
+  if (temporary) hideTimer = setTimeout(() => {el('status').hidden = true;}, 3500);
 }
-
 function setBusy(value) {
   busy = value;
-  for (const id of ['seed', 'mode', 'generate', 'random']) el(id).disabled = value;
+  for (const id of ['seed','copy-seed','generate','random']) el(id).disabled = value;
   el('cancel').hidden = !value;
   el('world').setAttribute('aria-busy', String(value));
   clearInterval(timer);
   if (value) {
     began = performance.now();
-    timer = setInterval(() => {
-      el('status').textContent = `${message} (${Math.floor((performance.now() - began) / 1000)}s)`;
-    }, 1000);
+    timer = setInterval(() => {el('status').textContent = `${message} (${Math.floor((performance.now()-began)/1000)}s)`;}, 1000);
   }
 }
-
-function worldUrl(result) {
-  const url = new URL(location.href);
-  url.search = new URLSearchParams({seed: result.seed, mode: result.mode, v: manifest.release});
-  url.hash = '';
-  return url.href;
-}
-
 function fail(text) {
   worker?.terminate(); worker = undefined;
   setBusy(false);
+  if (current) seed.value = current.metadata.seed;
   report(text, true);
-  if (!current) {
-    el('empty').querySelector('p').textContent = 'Your world is ready to be generated.';
-    el('empty').querySelector('span').textContent = 'Check the message above, then try Generate world again.';
-  }
+  if (!current) el('empty').textContent = 'Choose a seed and generate a world.';
 }
-
+function updateUrl() {
+  if (!current) return;
+  const url = new URL(location.href);
+  url.search = new URLSearchParams({seed:current.metadata.seed,view:renderer.view});
+  url.hash = '';
+  history.replaceState(null, '', url);
+}
+function selectView(view) {
+  renderer?.setView(view);
+  el('view-globe').setAttribute('aria-pressed',String(view === 'globe'));
+  el('view-map').setAttribute('aria-pressed',String(view === 'map'));
+  updateUrl();
+}
+function show(scene) {
+  renderer.load(scene);
+  current = scene;
+  seed.value = scene.metadata.seed;
+  el('sea-level').textContent = scene.metadata.seaLevelM.toFixed(2) + ' m';
+  const metres = value => Math.round(value).toLocaleString('en-US').replace('-', '−');
+  el('elevation-range').textContent = `${metres(scene.metadata.elevationMinM)} to ${metres(scene.metadata.elevationMaxM)} m`;
+  el('empty').hidden = true;
+  updateUrl();
+}
 function generate() {
   if (busy) return;
-  if (!manifest) { report('The demo could not load. Check your connection and reload the page.', true); return; }
+  if (!manifest || !renderer) {report('Reload the page to load the generator.',true);return;}
   const value = seed.value.trim();
-  if (!/^[0-9]{1,20}$/.test(value) || BigInt(value) > 18446744073709551615n) {
-    report('Use a whole-number seed from 0 to 18446744073709551615.', true); seed.focus(); return;
+  if (!/^[0-9]{1,20}$/.test(value) || BigInt(value)>18446744073709551615n) {
+    report('Use a whole-number seed from 0 to 18446744073709551615.',true);seed.focus();return;
   }
-  const normalized = BigInt(value).toString();
-  seed.value = normalized;
-  setBusy(true);
-  report('Starting your world…');
+  seed.value = BigInt(value).toString();
+  setBusy(true);report('Starting your world…');
   try {
-    if (!worker) {
-      worker = new Worker(new URL('./worker.js', import.meta.url));
-      worker.onerror = event => { event.preventDefault(); fail('The generator could not start. Check your connection and try Generate world again.'); };
-      worker.onmessage = ({data}) => {
-        if (data.type === 'status') report(data.message);
-        if (data.type === 'error') { console.error(data.message); fail('Generation failed. Try again, or select Snapshot for a lighter world. Details: ' + data.message.split('\n').slice(-1)[0]); }
-        if (data.type === 'result') {
-          setBusy(false);
-          current = data.result;
-          el('viewer').srcdoc = current.html;
-          el('viewer').hidden = false;
-          el('empty').hidden = true;
-          el('share').disabled = false;
-          if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-          downloadUrl = URL.createObjectURL(new Blob([current.html], {type: 'text/html'}));
-          el('download').href = downloadUrl;
-          el('download').download = `world-${current.seed}-${current.mode}.html`;
-          el('download').setAttribute('aria-disabled', 'false');
-          el('identity').textContent = `Seed ${current.seed}. ${current.mode === 'm3' ? 'M3 regional-v2 final terrain' : 'M2 snapshot'}. Preview resolution: 10,242 samples. Canonical SHA-256: ${current.canonicalSha256}. Demo: ${data.release}.`;
-          history.replaceState(null, '', worldUrl(current));
-          report(`World ${current.seed} generated in ${current.seconds.toFixed(1)}s.`);
-        }
-      };
-    }
-    worker.postMessage({seed: normalized, mode: mode.value, release: manifest.release});
-  } catch (error) { fail('The browser could not start generation. Reload and try again. ' + error.message); }
+    worker = new Worker(new URL('./worker.js',import.meta.url));
+    worker.onerror = event => {event.preventDefault();fail('The generator could not start. Check your connection and try again.');};
+    worker.onmessage = ({data}) => {
+      if (data.type==='status') report(data.message);
+      if (data.type==='error') {console.error(data.message);fail('Generation failed. Try Generate world again.');}
+      if (data.type==='result') {
+        worker.terminate();worker=undefined;
+        setBusy(false);
+        try {show(data.result);report(`Generated in ${data.result.seconds.toFixed(1)}s.`,false,true);}
+        catch(error) {console.error(error);fail('The world could not be displayed. Reload and try again.');}
+      }
+    };
+    worker.postMessage({seed:seed.value,release:manifest.release});
+  } catch(error) {console.error(error);fail('The browser could not start generation. Reload and try again.');}
 }
-
-form.addEventListener('submit', event => { event.preventDefault(); generate(); });
+el('generator').addEventListener('submit',event=>{event.preventDefault();generate();});
 el('random').onclick = () => {
-  const values = crypto.getRandomValues(new Uint32Array(2));
-  seed.value = ((BigInt(values[0]) << 32n) | BigInt(values[1])).toString();
-  generate();
+  const values=crypto.getRandomValues(new Uint32Array(2));
+  seed.value=((BigInt(values[0])<<32n)|BigInt(values[1])).toString();generate();
 };
 el('cancel').onclick = () => {
-  worker?.terminate(); worker = undefined;
-  setBusy(false);
-  report('Generation cancelled. Choose a seed and generate another world.');
-  if (!current) el('empty').querySelector('p').textContent = 'Choose your next world.';
+  worker?.terminate();worker=undefined;setBusy(false);
+  if(current)seed.value=current.metadata.seed;
+  else el('empty').textContent='Choose a seed and generate a world.';
+  report('Cancelled.',false,true);
 };
-el('share').onclick = async () => {
-  if (!current) return;
-  const url = worldUrl(current);
-  try { await navigator.clipboard.writeText(url); report('World link copied.'); }
-  catch { history.replaceState(null, '', url); report('Copy the address from your browser to share this world.'); }
+el('copy-seed').onclick=async()=>{
+  try {await navigator.clipboard.writeText(seed.value);report('Seed copied.',false,true);}
+  catch {seed.focus();seed.select();report('Seed selected. Press copy.',false,true);}
 };
+el('view-globe').onclick=()=>selectView('globe');
+el('view-map').onclick=()=>selectView('map');
+el('reset').onclick=()=>renderer?.reset();
+el('colour').onchange=()=>{
+  const mode=Number(el('colour').value);
+  renderer?.setOptions({mode});
+  el('terrain-key').hidden=mode>=2;
+  el('alternate-key').hidden=mode<2;
+  el('alternate-key').textContent = mode===2?'Colour shows elevation above or below 0 m.':mode===3?'Each colour is an initial plate.':mode===4?'Blue · oceanic crust\nGold · continental crust':'';
+};
+el('exaggeration').oninput=()=>{
+  const exaggeration=Number(el('exaggeration').value);
+  el('scale').textContent=exaggeration+'×';renderer?.setOptions({exaggeration});
+};
+el('boundaries').onchange=()=>renderer?.setOptions({boundaries:el('boundaries').checked});
+const compact=matchMedia('(max-width: 899px)');
+const adapt=()=>{el('display').open=!compact.matches;};
+adapt();compact.addEventListener('change',adapt);
 try {
-  const response = await fetch(new URL('./manifest.json', import.meta.url));
-  if (!response.ok) throw new Error('Demo manifest missing');
-  manifest = await response.json();
-  const params = new URLSearchParams(location.search);
-  if (params.has('seed')) seed.value = params.get('seed');
-  if (params.has('mode')) {
-    if (!['m2', 'm3'].includes(params.get('mode'))) throw new Error('This link has an unknown terrain mode. Choose a terrain mode and generate a world.');
-    mode.value = params.get('mode');
+  renderer=new WorldRenderer(el('globe'),text=>report(text,true));
+  const params=new URLSearchParams(location.search);
+  if(params.has('seed'))seed.value=params.get('seed');
+  selectView(params.get('view')==='map'?'map':'globe');
+  const response=await fetch(new URL('./manifest.json',import.meta.url));
+  if(!response.ok)throw new Error('The generator could not load. Check your connection and reload.');
+  manifest=await response.json();
+  let loaded=false;
+  if(seed.value==='42' && manifest.starter) {
+    try {
+      const response=await fetch(new URL('./'+manifest.starter,import.meta.url));
+      if(!response.ok)throw new Error('Starter world unavailable');
+      const cached=await response.json();
+      if(!['sourceSha256','pyodideVersion','numpyVersion'].every(key=>cached[key]===manifest[key]))throw new Error('Starter world version mismatch');
+      show(cached.scene);loaded=true;
+    } catch(error) {console.warn(error.message);}
   }
-  el('runtime').textContent = `Runs on your device with Pyodide ${manifest.pyodideVersion} and NumPy ${manifest.numpyVersion}. This browser edition is repeatable within its pinned runtime; its numeric fingerprint can differ from desktop Python. The first visit needs an internet connection.`;
-  if (params.has('v') && params.get('v') !== manifest.release) {
-    fail('This link was made with a different demo version. Generate world will use the current version.');
-  } else generate();
-} catch (error) { fail(error.message + ' Reload the page if the demo files did not load.'); }
+  setBusy(false);
+  if(!loaded)generate();
+} catch(error) {console.error(error);fail(error.message);}
