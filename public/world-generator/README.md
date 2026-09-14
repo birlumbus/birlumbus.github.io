@@ -31,14 +31,15 @@ world. The address records the displayed seed and view.
 
 ## Runtime and starter world
 
-New worlds run the packaged Python engine in a Web Worker using pinned Pyodide
+New worlds run the packaged final-surface engine in a Web Worker using pinned Pyodide
 0.28.3 and NumPy 2.2.5 from jsDelivr. The opening screen downloads and prepares
 that runtime beside a slowly rotating miniature of seed 42 and a single loading
-title. A 30–60 second estimate appears only while generating a new world. The ready worker is
-reused for the first generation; subsequent results terminate their worker to
-release memory. Browser network caches help later starts. Generation remains much heavier than interactive rendering:
-standard M3 took about 34 seconds in the tested desktop browser. Other devices
-will vary. WebGL 2 and HTTPS (or localhost) are required.
+title. A time estimate appears only while generating a new world. The initialized
+worker is reused for subsequent worlds; cancellation or a failure terminates it.
+Temporary Python generation objects are released after each result. Browser
+network caches help later page loads. Standard worlds took roughly 7 seconds in
+the tested desktop browser, down from roughly 35 seconds; other devices vary.
+WebGL 2 and HTTPS (or localhost) are required.
 
 After setup, seed 42 opens without generation from `starter.json`, an actual
 browser-generated result. It is included only when its source archive SHA-256 and runtime versions
@@ -47,6 +48,12 @@ normally. To refresh it, generate seed 42 through the pinned worker and save an
 object containing `sourceSha256`, `pyodideVersion`, `numpyVersion`, and `scene`
 (the worker result) as `web/starter.json` before rebuilding. No native result is
 substituted: browser and native floating-point fingerprints can differ.
+
+The browser computes the final regional surface without storing intermediate
+renders or archival event records. The full Python replay remains the reference
+for numerical and visual parity checks. Final-only results carry a `surfaceSha256`
+fingerprint of their visible fields, distinct from a complete replay's canonical
+hash.
 
 Terrain is procedural regional M3, not a high-resolution erosion simulation.
 No synthetic detail is added by the renderer. Purple basins are unresolved

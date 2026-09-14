@@ -35,7 +35,7 @@ export class LoadingIntro {
   setPhase(phase='loading') {
     const generating=phase==='generating';
     this.note.hidden=!generating;
-    this.note.textContent=generating?'Usually takes 30–60 seconds.':'';
+    this.note.textContent=generating?'Usually takes 5–15 seconds.':'';
   }
   hide() {
     this.root.hidden=true;document.body.classList.remove('loading');

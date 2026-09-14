@@ -1,4 +1,4 @@
-/* One numerical job per worker. Termination cancels Python without shared memory. */
+/* Reuse the initialized engine; termination cancels a job or releases a failed runtime. */
 let runtime;
 const status = (message, phase = 'loading') => self.postMessage({type: 'status', message, phase});
 const versionError = () => Object.assign(new Error('The demo was updated. Reload to use the new version.'), {code: 'version'});
