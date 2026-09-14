@@ -1,69 +1,54 @@
 # World Generator for GitHub Pages
 
-This folder is the complete static demo. Visitors generate worlds in their own
-browser. There is no backend, API key, database, npm install, or server bill.
+A static globe and 2D map demo. Worlds use the final regional M3 terrain and
+water at standard resolution: 40,962 samples and 81,920 faces. Both views share
+one data set, with slope lighting and the regional diagnostic's elevation
+palette. No backend, API key, database or server bill is needed.
 
-## Add it to your personal website
+## Publish
 
-1. Unzip `web-demo.zip`. It contains a `world-generator` folder.
-2. Copy that whole folder into your existing website's published content.
-   For a Pages site published from a branch, this is normally the repository
-   root or `docs/`, as configured in **Settings → Pages**. If your site has its
-   own build pipeline, put the folder in its static/public assets directory so
-   the contents are copied unchanged into the published site.
-3. Commit and push through your normal website workflow.
-4. Visit `https://YOUR-SITE/world-generator/` and add a link there from your site.
-   A project Pages site also works at
-   `https://USERNAME.github.io/REPOSITORY/world-generator/`.
+Build with `python scripts/build_web_demo.py`, then unzip `dist/web-demo.zip`.
+Copy its `world-generator` folder into your website's published content (for
+Astro, `public/world-generator`). Commit and publish through your usual Pages
+workflow. All asset paths are relative; keep the manifest, engine archive and
+JavaScript modules together. `.nojekyll` supports standalone branch-based Pages
+hosting; do not disable Jekyll in a parent site that depends on it.
 
-All asset paths are relative. Leave `manifest.json`, the engine zip, and the
-JavaScript files together. The `.nojekyll` file is included for serving the demo
-as a standalone Pages root; follow your existing site's build process when
-adding it as a subfolder. Do not disable Jekyll for a site that depends on it.
+Preview with `python -m http.server 8000 --directory dist` and open
+`http://localhost:8000/web-demo/`. Use HTTP or HTTPS, not a file URL.
 
 ## Use
 
-- Enter a decimal seed or choose Random world. The full unsigned 64-bit seed
-  range is supported, from 0 through 18446744073709551615.
-- Evolved mountains shows M3 regional-v2's final terrain and water; Snapshot is
-  the faster M2 mode. Both use preview resolution, 10,242 samples.
-- Copy world link shares the generated seed, terrain mode, and demo release.
-  Changed form fields do not change the shared world until generation succeeds.
-- Save globe downloads a self-contained HTML viewer that opens offline.
-- Cancel stops a running generation. Generate world starts a new worker.
+Enter a decimal seed, choose Generate world or Random world, then drag and zoom.
+The seed field's copy icon copies just the seed. All unsigned 64-bit integers
+are supported, from 0 through 18446744073709551615. Globe / 2D map switches views
+immediately; the reset icon restores framing. Keyboard controls on the canvas
+are arrow keys, +/− and Home. Display holds the colour, vertical exaggeration
+and plate boundary controls. Cancel stops generation and preserves the current
+world. The address records the displayed seed and view.
 
-## Runtime and limits
+## Runtime and starter world
 
-The first visit downloads pinned Pyodide 0.28.3 and NumPy 2.2.5 from jsDelivr,
-so it needs internet access. Python runs in a Web Worker; generation doesn't
-block the page. Subsequent worlds reuse the runtime until cancellation or error.
-HTTPS is required outside localhost (GitHub Pages supplies HTTPS).
+New worlds run the packaged Python engine in a Web Worker using pinned Pyodide
+0.28.3 and NumPy 2.2.5 from jsDelivr. The first generation downloads that runtime;
+network caches help later runs. The worker is terminated after each result to
+release its memory. Generation remains much heavier than interactive rendering:
+standard M3 took about 34 seconds in the tested desktop browser. Other devices
+will vary. WebGL 2 and HTTPS (or localhost) are required.
 
-The engine source is packaged directly from this project. Native Python still
-uses its existing dependency pins. Floating-point results can differ between
-browser and desktop, so their canonical hashes are not expected to match. Links
-include the browser demo release; an outdated release link is visibly flagged
-instead of silently regenerating with changed code. For permanent old links,
-keep old demo folders at versioned paths, or save a globe HTML file.
+Seed 42 can open immediately from `starter.json`, an actual browser-generated
+result. It is included only when its source archive SHA-256 and runtime versions
+match the build. A changed engine invalidates the starter; the demo then generates
+normally. To refresh it, generate seed 42 through the pinned worker and save an
+object containing `sourceSha256`, `pyodideVersion`, `numpyVersion`, and `scene`
+(the worker result) as `web/starter.json` before rebuilding. No native result is
+substituted: browser and native floating-point fingerprints can differ.
 
-M3 is experimental and uses more memory; lower-powered devices can use Snapshot.
-The renderer needs WebGL. Initial plate and crust overlays remain baseline
-fields. Purple basins are unresolved candidates, not confirmed lakes.
+Terrain is procedural regional M3, not a high-resolution erosion simulation.
+No synthetic detail is added by the renderer. Purple basins are unresolved
+candidates, not confirmed lakes. Plate and crust overlays show the initial
+snapshot. Seeds use the current deployed engine; URLs do not preserve old
+versions of the generator.
 
-## Rebuild and preview from the source project
-
-```sh
-python scripts/build_web_demo.py
-python -m http.server 8000 --directory dist
-```
-
-Open `http://localhost:8000/web-demo/`. The published files cannot generate worlds
-when opened as `file://`; use an HTTP server or GitHub Pages. Saved globe HTML
-files work directly from disk.
-
-Build outputs: `dist/web-demo/` and `dist/web-demo.zip`. The builder writes only
-its known output files. After an engine change, an older engine zip may remain
-in the local output folder, but the release archive includes only current files.
-
-References: [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)
-and [Pyodide workers](https://pyodide.org/en/0.28.3/usage/webworker.html).
+Build outputs contain only known assets. Obsolete engine archives may remain
+in a reused local output directory, but are excluded from the release zip.

@@ -3,30 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Turn a seed into an interactive world. Explore procedural terrain, oceans and tectonic plates in your browser.">
+  <meta name="description" content="Turn a seed into a world. Explore regional terrain on an interactive globe or map.">
   <title>World Generator</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
 </head>
 <body>
-  <header>
-    <div class="intro"><h1>World Generator</h1><p>Choose a seed. Explore the world it creates.</p></div>
-    <div class="actions"><button id="share" disabled>Copy world link</button><a id="download" aria-disabled="true">Save globe</a></div>
-  </header>
-  <form id="generator">
-    <div class="seed-field"><label for="seed">World seed</label><input id="seed" name="seed" type="text" inputmode="numeric" autocomplete="off" maxlength="20" value="42" required pattern="[0-9]{1,20}" aria-describedby="seed-hint"><span id="seed-hint" class="sr-only">A whole number from zero to 18446744073709551615.</span></div>
-    <div><label for="mode">Terrain</label><select id="mode" name="mode"><option value="m3">Evolved mountains · experimental</option><option value="m2">Snapshot · fast</option></select></div>
-    <button id="generate" type="submit" class="primary">Generate world</button>
-    <button id="random" type="button">Random world</button>
-    <button id="cancel" type="button" hidden>Cancel</button>
-    <p id="status" role="status" aria-live="polite">Preparing the generator…</p>
-  </form>
   <main id="world" aria-busy="true">
-    <div id="empty"><p>Your world is taking shape.</p><span>The first visit downloads the generator.<br>Next worlds start faster.</span></div>
-    <iframe id="viewer" title="Interactive world globe and display controls" sandbox="allow-scripts" hidden></iframe>
+    <canvas id="globe" tabindex="0" aria-label="Interactive world globe"></canvas>
+    <div id="empty" role="status">Loading world…</div>
   </main>
-  <footer><span>Drag to rotate. Scroll or pinch to zoom.</span><details><summary>About this world</summary><p>Procedural terrain and oceans on a spherical mesh. Evolved mountains use an experimental, bounded tectonic history. Purple areas are unresolved basins, not confirmed lakes. Plate and crust overlays show the initial snapshot.</p><p id="identity">Generate a world to see its seed and identity.</p><p id="runtime">Generation runs on your device. The first visit needs an internet connection.</p></details></footer>
+  <div class="toolbar">
+    <form id="generator">
+      <div class="seed-field">
+        <label for="seed">World seed</label>
+        <input id="seed" type="text" inputmode="numeric" autocomplete="off" maxlength="20" value="42" required pattern="[0-9]{1,20}" disabled>
+        <button id="copy-seed" type="button" class="icon-button" title="Copy seed" aria-label="Copy seed" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>
+      </div>
+      <button id="generate" type="submit" class="primary" disabled>Generate world</button>
+      <button id="random" type="button" disabled>Random world</button>
+      <button id="cancel" type="button" hidden>Cancel</button>
+    </form>
+    <div class="view-tools">
+      <div class="view-switch" role="group" aria-label="View">
+        <button id="view-globe" aria-pressed="true">Globe</button>
+        <button id="view-map" aria-pressed="false">2D map</button>
+      </div>
+      <button id="reset" class="icon-button" title="Reset view" aria-label="Reset view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></svg></button>
+    </div>
+  </div>
+  <p id="status" role="status" aria-live="polite" hidden></p>
+  <aside id="panel" aria-label="Display and legend">
+    <details id="display" open>
+      <summary>Display</summary>
+      <div class="display-content">
+        <label class="sr-only" for="colour">Colour</label>
+        <select id="colour"><option value="0">Terrain</option><option value="1">Water</option><option value="2">Elevation</option><option value="3">Plates</option><option value="4">Crust</option></select>
+        <label class="range-label" for="exaggeration">Vertical exaggeration <output id="scale" for="exaggeration">32×</output></label>
+        <input id="exaggeration" type="range" min="1" max="60" value="32">
+        <label class="check"><input id="boundaries" type="checkbox">Plate boundaries</label>
+      </div>
+    </details>
+    <div id="legend" aria-label="Legend">
+      <div id="terrain-key">
+        <div class="legend-item"><i class="swatch ocean"></i>Connected ocean</div>
+        <div class="metric">Sea level <span id="sea-level">—</span></div>
+        <div class="legend-item"><i class="swatch land"></i>Land</div>
+        <div class="legend-item"><i class="swatch basin"></i>Basin candidates</div>
+      </div>
+      <div id="alternate-key" hidden></div>
+      <div class="elevation-range"><span>Elevation</span><span id="elevation-range">—</span></div>
+    </div>
+  </aside>
   <noscript>This demo needs JavaScript and a browser with WebGL enabled.</noscript>
 </body>
 </html>

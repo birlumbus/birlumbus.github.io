@@ -12,4 +12,4 @@ order: 6
 accent: '#80d4d1'
 ---
 
-Generate a world from a seed and explore its terrain, oceans, and tectonic plates.
+Generate a world from a seed and explore detailed regional terrain on an interactive globe or 2D map.
