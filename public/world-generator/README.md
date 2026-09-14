@@ -33,7 +33,8 @@ world. The address records the displayed seed and view.
 
 New worlds run the packaged Python engine in a Web Worker using pinned Pyodide
 0.28.3 and NumPy 2.2.5 from jsDelivr. The opening screen downloads and prepares
-that runtime beside a slowly rotating miniature of seed 42. The ready worker is
+that runtime beside a slowly rotating miniature of seed 42 and a single loading
+title. A 30–60 second estimate appears only while generating a new world. The ready worker is
 reused for the first generation; subsequent results terminate their worker to
 release memory. Browser network caches help later starts. Generation remains much heavier than interactive rendering:
 standard M3 took about 34 seconds in the tested desktop browser. Other devices
