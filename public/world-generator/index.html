@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Turn a seed into an interactive world. Explore procedural terrain, oceans and tectonic plates in your browser.">
+  <title>World Generator</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header>
+    <div class="intro"><h1>World Generator</h1><p>Choose a seed. Explore the world it creates.</p></div>
+    <div class="actions"><button id="share" disabled>Copy world link</button><a id="download" aria-disabled="true">Save globe</a></div>
+  </header>
+  <form id="generator">
+    <div class="seed-field"><label for="seed">World seed</label><input id="seed" name="seed" type="text" inputmode="numeric" autocomplete="off" maxlength="20" value="42" required pattern="[0-9]{1,20}" aria-describedby="seed-hint"><span id="seed-hint" class="sr-only">A whole number from zero to 18446744073709551615.</span></div>
+    <div><label for="mode">Terrain</label><select id="mode" name="mode"><option value="m3">Evolved mountains · experimental</option><option value="m2">Snapshot · fast</option></select></div>
+    <button id="generate" type="submit" class="primary">Generate world</button>
+    <button id="random" type="button">Random world</button>
+    <button id="cancel" type="button" hidden>Cancel</button>
+    <p id="status" role="status" aria-live="polite">Preparing the generator…</p>
+  </form>
+  <main id="world" aria-busy="true">
+    <div id="empty"><p>Your world is taking shape.</p><span>The first visit downloads the generator.<br>Next worlds start faster.</span></div>
+    <iframe id="viewer" title="Interactive world globe and display controls" sandbox="allow-scripts" hidden></iframe>
+  </main>
+  <footer><span>Drag to rotate. Scroll or pinch to zoom.</span><details><summary>About this world</summary><p>Procedural terrain and oceans on a spherical mesh. Evolved mountains use an experimental, bounded tectonic history. Purple areas are unresolved basins, not confirmed lakes. Plate and crust overlays show the initial snapshot.</p><p id="identity">Generate a world to see its seed and identity.</p><p id="runtime">Generation runs on your device. The first visit needs an internet connection.</p></details></footer>
+  <noscript>This demo needs JavaScript and a browser with WebGL enabled.</noscript>
+</body>
+</html>
