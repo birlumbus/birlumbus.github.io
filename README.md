@@ -22,6 +22,10 @@ Project entries live in `src/content/projects`. Add a new markdown file with fro
 
 Deploys run from `.github/workflows/deploy.yml` after pushes to `main`.
 
+The homepage cloth source lives in `src/scripts/cloth` and is bundled by Astro,
+which gives changed JavaScript a new asset URL on deployment. The older
+`public/cloth` modules remain for cached pages and the original mockup.
+
 Trebuchet is maintained separately in `birlumbus/trebuchet`. Its generated files live in `public/trebuchet/`; `build.json` identifies the source revision. To update it, run `npm run export:portfolio -- /path/to/this/checkout` from the Trebuchet repository, then build and publish this site as usual.
 
 World Generator lives in `public/world-generator/`. It runs the packaged Python

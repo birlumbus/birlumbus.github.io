@@ -1,3 +1,5 @@
+// Compatibility entry for cached pages and the original mockup.
+// The homepage bundles the maintained source in src/scripts/cloth/.
 import { ClothCurrent } from './current.js';
 
 const canvas = document.querySelector('#sculpture');

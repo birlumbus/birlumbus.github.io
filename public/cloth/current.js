@@ -1,3 +1,5 @@
+// Compatibility module for cached pages and the original mockup.
+// The maintained simulation lives in src/scripts/cloth/current.js.
 const COLS = 33;
 const ROWS = 25;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));

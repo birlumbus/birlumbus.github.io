@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ClothCurrent } from '../public/cloth/current.js';
+import { ClothCurrent } from '../src/scripts/cloth/current.js';
 
 function run(current, seconds, fps = 60) {
   for (let i = 0; i < seconds * fps; i++) current.advance(1 / fps);
