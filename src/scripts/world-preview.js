@@ -6,7 +6,7 @@ if (trigger && preview) {
   const hover = matchMedia('(hover: hover) and (pointer: fine)');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   let hovered = false, focused = false, inView = true;
-  let timer = 0, loading = null, renderer = null;
+  let loading = null, renderer = null;
 
   function pauseOrRotate() {
     if (!renderer) return;
@@ -15,8 +15,6 @@ if (trigger && preview) {
   }
 
   function hide() {
-    clearTimeout(timer);
-    timer = 0;
     preview.classList.remove('is-visible');
     renderer?.pause();
   }
@@ -40,13 +38,7 @@ if (trigger && preview) {
 
   function update() {
     if (!hovered && !focused) hide();
-    else if (focused) {
-      clearTimeout(timer);
-      timer = 0;
-      void reveal();
-    } else if (!timer && !preview.classList.contains('is-visible')) {
-      timer = setTimeout(() => { timer = 0; void reveal(); }, 160);
-    }
+    else void reveal();
   }
 
   trigger.addEventListener('pointerenter', event => {
