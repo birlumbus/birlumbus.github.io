@@ -1,4 +1,5 @@
 import { ClothCurrent } from './current.js';
+import { createClothSurface, deformClothSurface } from './surface.js';
 
 const canvas = document.querySelector('#sculpture');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -39,7 +40,7 @@ function createSculpture(gl) {
     }`;
   const fragment = `
     precision highp float;
-    uniform vec2 uResolution;
+    uniform vec2 uResolution; uniform vec4 uUVBounds;
     varying vec3 vNormal; varying vec3 vPosition; varying vec2 vUV; varying vec2 vTint;
     ${atmosphere}
     void main() {
@@ -72,7 +73,8 @@ function createSculpture(gl) {
       float colorPresence = 1.-exp(-vTint.x*3.2);
       float wash = colorPresence*(.50+crease*.14+fresnel*.06);
       col = mix(col,sheen,clamp(wash,0.,.72));
-      float edge = min(min(vUV.y,1.-vUV.y),min(vUV.x,1.-vUV.x));
+      vec2 edgeUV = (vUV-uUVBounds.xy)/uUVBounds.zw;
+      float edge = min(min(edgeUV.y,1.-edgeUV.y),min(edgeUV.x,1.-edgeUV.x));
       col += vec3(.17,.2,.22)*exp(-edge*360.)*(.3+fresnel*.7);
       col += (noise(gl_FragCoord.xy)-.5)*.006;
       gl_FragColor = vec4(col,1.);
@@ -97,30 +99,11 @@ function createSculpture(gl) {
   }
   const sculptureProgram = program(vertex, fragment);
   const backgroundProgram = program(bgVertex, bgFragment);
-  const uniforms = Object.fromEntries(['uResolution', 'uCenter', 'uScale'].map(name => [name, gl.getUniformLocation(sculptureProgram, name)]));
+  const uniforms = Object.fromEntries(['uResolution', 'uCenter', 'uScale', 'uUVBounds'].map(name => [name, gl.getUniformLocation(sculptureProgram, name)]));
   const bgResolution = gl.getUniformLocation(backgroundProgram, 'uResolution');
 
-  const U = 88, V = 64, count = (U + 1) * (V + 1);
-  const rest = new Float32Array(count * 3);
-  const foldHeight = new Float32Array(count);
-  const positions = new Float32Array(count * 3);
-  const normals = new Float32Array(count * 3);
-  const tints = new Float32Array(count * 2);
-  const uvs = new Float32Array(count * 2);
-  const indices = [];
-  for (let y = 0; y <= V; y++) {
-    for (let x = 0; x <= U; x++) {
-      const index = y * (U + 1) + x, u = x / U * 2 - 1, v = y / V * 2 - 1;
-      rest[index * 3] = u * (1.03 + .12 * Math.cos(v * 2)) + .14 * Math.sin(v * 3 + u * 2);
-      rest[index * 3 + 1] = v * .87 + .12 * Math.cos(u * 2.6) - u * .14;
-      foldHeight[index] = .32 * Math.cos(u * 4.8 + v * 1.1);
-      rest[index * 3 + 2] = foldHeight[index] + .16 * Math.sin(v * 3) + .10 * u * v;
-      uvs[index * 2] = x / U;
-      uvs[index * 2 + 1] = y / V;
-      if (x < U && y < V) indices.push(index, index + 1, index + U + 1, index + 1, index + U + 2, index + U + 1);
-    }
-  }
-  positions.set(rest);
+  const surface = createClothSurface();
+  const { U, V, count, positions, normals, tints, uvs, indices, uvBounds } = surface;
   const positionBuffer = gl.createBuffer(), normalBuffer = gl.createBuffer(), tintBuffer = gl.createBuffer();
   const uvBuffer = gl.createBuffer(), indexBuffer = gl.createBuffer(), backgroundBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -132,7 +115,7 @@ function createSculpture(gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
   gl.bindBuffer(gl.ARRAY_BUFFER, backgroundBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
 
@@ -142,16 +125,8 @@ function createSculpture(gl) {
     gl.enableVertexAttribArray(location);
     gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
   }
-  const displacement = [0, 0, 0];
   function geometry() {
-    for (let i = 0; i < count; i++) {
-      const u = uvs[i * 2] * 2 - 1, v = uvs[i * 2 + 1] * 2 - 1;
-      current.sample(u, v, displacement);
-      const release = current.foldRelease(u, v);
-      positions[i * 3] = rest[i * 3] + displacement[0] + u * .2 * release;
-      positions[i * 3 + 1] = rest[i * 3 + 1] + displacement[1];
-      positions[i * 3 + 2] = rest[i * 3 + 2] + displacement[2] - foldHeight[i] * release;
-    }
+    deformClothSurface(surface, current);
     // Derive lighting from the moving surface itself; highlights travel with folds.
     for (let y = 0; y <= V; y++) {
       for (let x = 0; x <= U; x++) {
@@ -235,6 +210,7 @@ function createSculpture(gl) {
     gl.uniform2f(uniforms.uResolution, width, height);
     gl.uniform2fv(uniforms.uCenter, center);
     gl.uniform2fv(uniforms.uScale, scale);
+    gl.uniform4fv(uniforms.uUVBounds, uvBounds);
     if (geometryDirty) geometry();
     attribute(sculptureProgram, 'aPosition', positionBuffer, 3);
     attribute(sculptureProgram, 'aNormal', normalBuffer, 3);
