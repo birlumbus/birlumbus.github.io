@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
-test('the built homepage loads versioned cloth code instead of fixed public module URLs', async () => {
+test('the built homepage versions its cloth, globe renderer, and terrain assets', async () => {
   const output = await mkdtemp(join(tmpdir(), 'portfolio-assets-'));
   try {
     execFileSync(process.execPath, [
@@ -15,12 +15,23 @@ test('the built homepage loads versioned cloth code instead of fixed public modu
     ], { cwd: fileURLToPath(new URL('../', import.meta.url)), stdio: 'pipe' });
     const html = await readFile(join(output, 'index.html'), 'utf8');
     const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(match => match[1]);
-    assert.equal(scripts.length, 1, 'The decorative cloth should have a single bundled entry point');
-    assert.match(scripts[0], /^\/_astro\/.+\.[\w-]+\.js$/, 'Cloth code must use a build-generated versioned URL');
-    const asset = join(output, scripts[0].slice(1));
-    assert.ok((await stat(asset)).size > 0, 'The deployed script reference must resolve to a real asset');
-    const bundle = await readFile(asset, 'utf8');
-    assert.doesNotMatch(bundle, /(?:from\s*|import\s*\()["'][^"']*\/cloth\//, 'Nested cloth imports must be bundled too');
+    assert.equal(scripts.length, 2, 'The homepage should initialize its cloth and globe preview');
+    for (const script of scripts) {
+      assert.match(script, /^\/_astro\/.+\.[\w-]+\.js$/, 'Homepage code must use build-generated versioned URLs');
+      const asset = join(output, script.slice(1));
+      assert.ok((await stat(asset)).size > 0, 'Each deployed script reference must resolve to a real asset');
+      const bundle = await readFile(asset, 'utf8');
+      assert.doesNotMatch(bundle, /(?:from\s*|import\s*\()["'][^"']*\/cloth\//, 'Nested cloth imports must be bundled too');
+    }
+    const files = await readdir(join(output, '_astro'));
+    const terrain = files.find(file => /^world-preview\.[\w-]+\.bin$/.test(file));
+    assert.ok(terrain, 'The globe terrain needs a versioned asset URL too');
+    assert.equal((await stat(join(output, '_astro', terrain))).size, 204816, 'The deployed terrain must contain the full preview mesh');
+    const bundles = await Promise.all(files.filter(file => file.endsWith('.js')).map(file => readFile(join(output, '_astro', file), 'utf8')));
+    assert.ok(bundles.some(bundle => bundle.includes(terrain)), 'The globe renderer must reference the deployed terrain');
+    const triggers = [...html.matchAll(/<a\b[^>]*\bdata-world-preview-trigger\b[^>]*>/g)];
+    assert.equal(triggers.length, 1, 'Only world generator should trigger a preview');
+    assert.match(triggers[0][0], /href="https:\/\/birlumbus\.github\.io\/world-generator\/"/, 'The preview link must retain direct project navigation');
   } finally {
     await rm(output, { recursive: true, force: true });
   }

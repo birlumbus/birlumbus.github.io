@@ -1,0 +1,27 @@
+<div class="world-preview" data-world-preview aria-hidden="true">
+  <canvas width="520" height="520"></canvas>
+</div>
+
+<script src="../scripts/world-preview.js"></script>
+
+<style>
+  .world-preview {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 26px);
+    width: clamp(64px, calc(50svh - 88px), 260px);
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 180ms ease, visibility 0s linear 180ms;
+  }
+  .world-preview.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 160ms ease;
+  }
+  canvas { display: block; width: 100%; height: 100%; }
+  @media (prefers-reduced-motion: reduce) { .world-preview, .world-preview.is-visible { transition: none; } }
+</style>

@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import ProjectCard from '../components/ProjectCard.astro';
+import WorldPreview from '../components/WorldPreview.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ClothBackground from '../components/ClothBackground.astro';
 
@@ -10,6 +10,7 @@ const projects = (await getCollection('projects'))
     if (a.data.order !== b.data.order) return a.data.order - b.data.order;
     return b.data.year - a.data.year;
   });
+const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length);
 ---
 
 <BaseLayout
@@ -18,11 +19,59 @@ const projects = (await getCollection('projects'))
   theme="cloth"
 >
   <ClothBackground />
-  <main class="site-shell site-main home-main">
-    <section class="project-section" aria-label="projects">
-      <div class="project-grid">
-        {projects.map((project) => <ProjectCard project={project} />)}
-      </div>
-    </section>
+  <main class="site-shell site-main home-main home-links">
+    <div class="project-navigation">
+      <WorldPreview />
+      <nav class="project-links" aria-label="Projects">
+        {rows.map(row => (
+          <div class="project-links-row">
+            {row.map(project => (
+              <a
+                class="project-link"
+                href={project.data.links.live ?? project.data.links.repo}
+                data-world-preview-trigger={project.id === 'world-generator' ? '' : undefined}
+              >{project.data.title}</a>
+            ))}
+          </div>
+        ))}
+      </nav>
+    </div>
   </main>
 </BaseLayout>
+
+<style>
+  .home-links { place-content: center; padding-block: 2rem; }
+  .project-navigation { position: relative; width: min(34rem, 100%); margin-inline: auto; }
+  .project-links { display: flex; flex-direction: column; gap: 12px; }
+  .project-links-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; }
+  .project-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 8px 6px;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-decoration: none;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .project-link::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 7px;
+    height: 1px;
+    background: currentColor;
+    opacity: .55;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 160ms ease;
+  }
+  .project-link:is(:hover, :focus-visible)::after { transform: scaleX(1); }
+  @media (max-width: 420px) { .project-links-row { gap: 10px; } }
+  @media (prefers-reduced-motion: reduce) { .project-link::after { transition: none; } }
+</style>
