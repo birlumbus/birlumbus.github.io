@@ -7,8 +7,8 @@ import ClothBackground from '../components/ClothBackground.astro';
 const projects = (await getCollection('projects'))
   .filter(({ data }) => data.featured)
   .sort((a, b) => {
-    if (a.data.order !== b.data.order) return a.data.order - b.data.order;
-    return b.data.year - a.data.year;
+    if (a.data.year !== b.data.year) return b.data.year - a.data.year;
+    return b.data.order - a.data.order;
   });
 const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length);
 ---
@@ -72,6 +72,9 @@ const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length)
     transition: transform 160ms ease;
   }
   .project-link:is(:hover, :focus-visible)::after { transform: scaleX(1); }
-  @media (max-width: 420px) { .project-links-row { gap: 10px; } }
+  @media (max-width: 420px) {
+    .project-links { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 12px 10px; }
+    .project-links-row { display: contents; }
+  }
   @media (prefers-reduced-motion: reduce) { .project-link::after { transition: none; } }
 </style>
