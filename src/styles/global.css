@@ -141,3 +141,42 @@ p {
     grid-template-columns: 1fr;
   }
 }
+
+html.cloth-home {
+  color-scheme: light;
+  --bg: #eaf0f1;
+  --ink: #283e49;
+  --line: rgb(40 62 73 / .16);
+  --panel: rgb(234 240 241 / .76);
+  --accent: #476d82;
+}
+
+.cloth-home body {
+  background: var(--bg);
+}
+
+.cloth-home body::before {
+  display: none;
+}
+
+.cloth-home .home-main {
+  position: relative;
+}
+
+.cloth-home .project-card {
+  user-select: none;
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cloth-home .project-card:hover,
+.cloth-home .project-card:focus-visible {
+  border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-card {
+    transition: none;
+  }
+}

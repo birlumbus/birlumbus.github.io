@@ -4,21 +4,24 @@ import '../styles/global.css';
 type Props = {
   title?: string;
   description?: string;
+  theme?: 'default' | 'cloth';
 };
 
 const {
   title = 'Projects',
   description,
+  theme = 'default',
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class:list={{ 'cloth-home': theme === 'cloth' }}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content={theme === 'cloth' ? '#eaf0f1' : '#0c0f0d'} />
     <title>{title}</title>
     {description ? <meta name="description" content={description} /> : null}
     <link rel="canonical" href={canonical} />

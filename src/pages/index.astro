@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ClothBackground from '../components/ClothBackground.astro';
 
 const projects = (await getCollection('projects'))
   .filter(({ data }) => data.featured)
@@ -14,7 +15,9 @@ const projects = (await getCollection('projects'))
 <BaseLayout
   title="Projects"
   description="Projects."
+  theme="cloth"
 >
+  <ClothBackground />
   <main class="site-shell site-main home-main">
     <section class="project-section" aria-label="projects">
       <div class="project-grid">
