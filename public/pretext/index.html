@@ -3,49 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>jellyfish</title>
-    <script type="module" crossorigin src="/pretext/assets/index-Z6l8-BSc.js"></script>
-    <link rel="stylesheet" crossorigin href="/pretext/assets/index-Bh_KfVDg.css">
+    <link rel="icon" type="image/svg+xml" href="/pretext/favicon.svg" />
+    <meta name="theme-color" content="#071f2a" />
+    <meta name="description" content="A jellyfish swims through Moby-Dick, opening currents in the words." />
+    <title>jellyfish · words in water</title>
+    <script type="module" crossorigin src="/pretext/assets/index-Dnj5JA18.js"></script>
+    <link rel="stylesheet" crossorigin href="/pretext/assets/index-DwTcoU9R.css">
   </head>
   <body>
-    <header class="site-header">
-      <div class="controls-toolbar" aria-label="Animation speed controls">
-        <div class="toolbar-row">
-          <span class="toolbar-label">Jellyfish speed</span>
-          <input
-            id="jelly-speed"
-            type="range"
-            min="25"
-            max="250"
-            value="100"
-            step="5"
-            aria-valuemin="25"
-            aria-valuemax="250"
-            aria-valuenow="100"
-          />
-          <span class="toolbar-value" id="jelly-speed-val">1.00×</span>
-        </div>
-        <div class="toolbar-row">
-          <span class="toolbar-label">ripple speed (click!)</span>
-          <input
-            id="ripple-speed"
-            type="range"
-            min="25"
-            max="250"
-            value="100"
-            step="5"
-            aria-valuemin="25"
-            aria-valuemax="250"
-            aria-valuenow="100"
-          />
-          <span class="toolbar-value" id="ripple-speed-val">1.00×</span>
-        </div>
-      </div>
-    </header>
-    <div class="stage" id="stage">
+    <main class="stage" id="stage" tabindex="0" aria-label="Jellyfish swimming through text" aria-describedby="interaction-hint keyboard-hint">
       <canvas id="bg-canvas" aria-hidden="true"></canvas>
       <canvas id="jelly-canvas" aria-hidden="true"></canvas>
       <canvas id="text-canvas" aria-hidden="true"></canvas>
-    </div>
+      <p class="sr-only" id="keyboard-hint">Use the arrow keys to swim. Press Space or Enter to dive or surface.</p>
+      <p class="sr-only" id="accessible-passage"></p>
+    </main>
+    <footer class="scene-footer">
+      <button id="dive" class="dive-button" type="button" aria-label="Dive below the words"><span class="depth-dot" aria-hidden="true"></span><span id="depth-label">Dive</span></button>
+      <details class="motion-settings" id="motion-settings">
+        <summary><span id="interaction-hint">Move to swim. Click to dive.</span><span class="menu-chevron" aria-hidden="true">⌃</span></summary>
+        <div class="settings-panel">
+          <div class="toolbar-row">
+            <label for="jelly-speed">Swim speed</label>
+            <output for="jelly-speed" id="jelly-speed-val">1.00×</output>
+            <input id="jelly-speed" type="range" min="25" max="250" value="100" step="5" aria-valuetext="1.00 times normal speed" />
+          </div>
+          <div class="toolbar-row">
+            <label for="ripple-speed">Ripple speed</label>
+            <output for="ripple-speed" id="ripple-speed-val">1.00×</output>
+            <input id="ripple-speed" type="range" min="25" max="250" value="100" step="5" aria-valuetext="1.00 times normal speed" />
+          </div>
+          <label class="motion-choice" for="still-water">
+            <input id="still-water" type="checkbox" />
+            <span>Still water<small>Still tendrils, no animated ripples.</small></span>
+          </label>
+        </div>
+      </details>
+      <span class="sr-only" id="depth-status" role="status">At the surface.</span>
+    </footer>
   </body>
 </html>
