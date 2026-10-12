@@ -25,6 +25,12 @@ const previews = [
     element: document.querySelector('[data-jellyfish-preview]'),
     load: canvas => import('./jellyfish-preview-renderer.js').then(module => module.createJellyfishPreview(canvas)),
   },
+  {
+    name: 'Chimes',
+    trigger: document.querySelector('[data-chimes-preview-trigger]'),
+    element: document.querySelector('[data-chimes-preview]'),
+    load: canvas => import('./chimes-preview-renderer.js').then(module => module.createChimesPreview(canvas)),
+  },
 ].filter(preview => preview.trigger && preview.element);
 
 let hovered = null, focused = null, active = null, revision = 0;

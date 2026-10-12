@@ -41,6 +41,14 @@ test('the built homepage versions its cloth and project preview assets', async (
     assert.match(trebuchetTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/trebuchet\/"/, 'Trebuchet must retain direct project navigation');
     assert.match(html, /data-trebuchet-preview[^>]*aria-hidden="true"/, 'The decorative trebuchet stays out of the accessibility tree');
     assert.ok(files.some(file => /^trebuchet-preview-renderer\.[\w-]+\.js$/.test(file)), 'The trebuchet renderer must have a build-generated versioned URL');
+    const chimesTriggers = [...html.matchAll(/<a\b[^>]*\bdata-chimes-preview-trigger\b[^>]*>/g)];
+    assert.equal(chimesTriggers.length, 1, 'Chimes needs its own hover and keyboard preview trigger');
+    assert.match(chimesTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/floating-chimes\/"/, 'Chimes must retain direct project navigation');
+    assert.match(html, /data-chimes-preview[^>]*aria-hidden="true"/, 'The decorative chimes preview must stay out of the accessibility tree');
+    const chimesRenderer = files.find(file => /^chimes-preview-renderer\.[\w-]+\.js$/.test(file));
+    assert.ok(chimesRenderer, 'The chimes renderer must deploy as a versioned lazy asset');
+    const chimesBundle = await readFile(join(output, '_astro', chimesRenderer), 'utf8');
+    assert.doesNotMatch(chimesBundle, /AudioContext|webkitAudioContext|AudioEngine/, 'Hovering chimes must never load a sound engine');
     const jellyTriggers = [...html.matchAll(/<a\b[^>]*\bdata-jellyfish-preview-trigger\b[^>]*>/g)];
     assert.equal(jellyTriggers.length, 1, 'Jellyfish needs its own preview trigger');
     assert.match(jellyTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/pretext\/"/, 'Jellyfish must retain direct project navigation');
