@@ -417,6 +417,10 @@ function isTextEntryTarget(target) {
 function onKeyDown(event) {
   if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
   if (isTextEntryTarget(event.target)) return;
+  if (!audioReady) {
+    if (event.key.startsWith('Arrow')) event.preventDefault();
+    return;
+  }
   if (event.key === 'Escape' && openPanel) {
     setOpenPanel(null, { restoreFocus: true });
     return;
@@ -457,6 +461,7 @@ async function dismissUnlockOverlay() {
   if (!audio.isUnlocked) return;
 
   audioReady = true;
+  presets.disabled = false;
   unlockPrompt.classList.add('unlock-prompt--dismissed');
   unlockOverlay.setAttribute('aria-hidden', 'true');
   unlockOverlay.disabled = true;

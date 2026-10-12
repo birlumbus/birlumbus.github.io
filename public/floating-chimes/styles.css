@@ -20,6 +20,7 @@ body {
     linear-gradient(145deg, #14141d, #090d13 74%, #101017);
 }
 button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button:disabled { cursor: default; }
 button:focus-visible { outline: 2px solid var(--sea-glass); outline-offset: 4px; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
@@ -32,7 +33,8 @@ button:focus-visible { outline: 2px solid var(--sea-glass); outline-offset: 4px;
 .sound-status { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
 .sound-status > span { width: 5px; height: 5px; border: 1px solid #8b9a9f; border-radius: 50%; }
 .sound-status.is-on > span { background: var(--sea-glass); border-color: var(--sea-glass); box-shadow: 0 0 9px #82dad944; }
-canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; }
+canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; transition: opacity .35s ease, filter .35s ease; }
+.is-locked canvas { opacity: .28; filter: grayscale(1); cursor: default; }
 .unlock-prompt {
   position: fixed; top: calc(var(--stage-bottom) - 66px); left: 50%; transform: translateX(-50%);
   z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 9px; white-space: nowrap;
@@ -54,12 +56,14 @@ body:has(.chooser[aria-expanded='true']) #hint,
 body:has(.chooser[aria-expanded='true']) .unlock-prompt { opacity: 0; visibility: hidden; }
 .instrument-shelf {
   position: fixed; z-index: 4; bottom: max(18px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
-  width: min(900px, calc(100% - 40px)); padding: 16px 18px 14px;
+  width: min(900px, calc(100% - 40px)); padding: 16px 18px 14px; margin: 0; min-inline-size: 0;
   border: 1px solid #d1e4e31c; border-radius: 18px;
   background: linear-gradient(145deg, #252832d9, #181d26f2);
   box-shadow: inset 0 1px 0 #ffffff0a, 0 14px 45px #020a1240; backdrop-filter: blur(20px);
   display: grid; grid-template-columns: 225px minmax(0, 1fr); gap: 12px 24px;
+  transition: opacity .35s ease, filter .35s ease;
 }
+.is-locked .instrument-shelf { opacity: .38; filter: grayscale(1); pointer-events: none; }
 .shelf-summary { grid-column: 1; grid-row: 1; }
 .voice-control { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .control-label, h2 { font-size: 12px; color: var(--muted); font-weight: 500; }
