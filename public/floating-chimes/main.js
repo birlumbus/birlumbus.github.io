@@ -130,11 +130,12 @@ function resize() {
   const stageTop = masthead.getBoundingClientRect().bottom + 20;
   const stageBottom = presets.getBoundingClientRect().top - 22;
   const availableHeight = stageBottom - stageTop;
-  // The lowest pane ends at 82% of the stage. Leave room for the sound
-  // invitation on short screens as well as for the resting hint.
+  // The lowest pane ends at 82% of the stage. Leave room for the resting
+  // hint on short screens; the sound invitation sits over the glass.
   const stageHeight = Math.max(50, Math.min(availableHeight, (availableHeight - 82) / 0.82));
   document.documentElement.style.setProperty('--stage-top', `${stageTop}px`);
   document.documentElement.style.setProperty('--stage-bottom', `${stageBottom}px`);
+  document.documentElement.style.setProperty('--stage-center', `${stageTop + stageHeight * 0.42}px`);
   chimes.forEach(c => c.resize(w, stageHeight, hitBuf, stageTop));
   interaction.clear();
 }
