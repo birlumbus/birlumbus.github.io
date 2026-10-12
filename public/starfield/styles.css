@@ -65,21 +65,22 @@ body {
   pointer-events: none;
   position: absolute;
   text-align: center;
+  transition: opacity 180ms ease;
   z-index: 1;
 }
 
 .starfield-shell.is-revealed .starfield-hint {
-  animation: starfieldHint 5.5s ease both;
+  opacity: 1;
+  transition-delay: 1.6s;
+}
+
+.starfield-shell.has-interacted .starfield-hint {
+  opacity: 0;
+  transition-delay: 0s;
 }
 
 .starfield-hint__touch {
   display: none;
-}
-
-@keyframes starfieldHint {
-  0%, 30% { opacity: 0; }
-  40%, 80% { opacity: 1; }
-  100% { opacity: 0; }
 }
 
 .sr-only {
@@ -102,5 +103,5 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .starfield { transition: none; }
-  .starfield-hint { display: none; }
+  .starfield-hint { display: none; transition: none; }
 }

@@ -11,6 +11,15 @@ const projects = (await getCollection('projects'))
     return b.data.order - a.data.order;
   });
 const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length);
+
+function projectHref(href?: string) {
+  if (!href) return undefined;
+  const destination = new URL(href);
+  return destination.origin === Astro.site?.origin
+    ? destination.pathname + destination.search + destination.hash
+    : href;
+}
+
 ---
 
 <BaseLayout
@@ -28,7 +37,7 @@ const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length)
             {row.map(project => (
               <a
                 class="project-link"
-                href={project.data.links.live ?? project.data.links.repo}
+                href={projectHref(project.data.links.live ?? project.data.links.repo)}
                 data-world-preview-trigger={project.id === 'world-generator' ? '' : undefined}
                 data-starfield-preview-trigger={project.id === 'starfield' ? '' : undefined}
                 data-trebuchet-preview-trigger={project.id === 'trebuchet' ? '' : undefined}

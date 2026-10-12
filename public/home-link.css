@@ -1,0 +1,73 @@
+.portfolio-home-link {
+  position: fixed;
+  top: max(20px, env(safe-area-inset-top));
+  left: max(20px, env(safe-area-inset-left));
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #dce6ee;
+  background: transparent;
+  text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.portfolio-home-link svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.portfolio-home-link:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.portfolio-home-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.portfolio-home-link--light,
+.is-locked > .portfolio-home-link {
+  color: #283e49;
+}
+
+.portfolio-home-link--trebuchet {
+  border: 2px solid #607873;
+  border-radius: 0;
+  color: #293638;
+  background: #c2d0c8;
+  box-shadow: 2px 2px #607873;
+}
+
+.portfolio-home-link--trebuchet:hover {
+  background: #cfdbce;
+}
+
+/* Leave room beside the arrow for each experience's existing controls. */
+.portfolio-home-link ~ .toolbar,
+.portfolio-home-link ~ #root .stage-topline {
+  left: max(80px, calc(env(safe-area-inset-left) + 60px));
+}
+
+@media (max-width: 700px) {
+  .portfolio-home-link {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+  }
+
+  .portfolio-home-link ~ .toolbar,
+  .portfolio-home-link ~ #root .stage-topline {
+    left: max(68px, calc(env(safe-area-inset-left) + 56px));
+  }
+}

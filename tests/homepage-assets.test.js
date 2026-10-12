@@ -14,6 +14,13 @@ test('the built homepage versions its cloth and project preview assets', async (
       'build', '--outDir', output,
     ], { cwd: fileURLToPath(new URL('../', import.meta.url)), stdio: 'pipe' });
     const html = await readFile(join(output, 'index.html'), 'utf8');
+    const projectLinks = [...html.matchAll(/<a\b[^>]*\bclass="project-link"[^>]*\bhref="([^"]+)"/g)];
+    assert.equal(projectLinks.length, 5, 'The homepage should link to all five featured experiences');
+    for (const [, href] of projectLinks) {
+      const destination = new URL(href, 'http://127.0.0.1:4321');
+      assert.equal(destination.origin, 'http://127.0.0.1:4321', 'Experience links must stay on the preview host');
+      assert.ok((await stat(join(output, destination.pathname.slice(1), 'index.html'))).size > 0, 'Each experience link must resolve to a page in the same build');
+    }
     const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(match => match[1]);
     assert.equal(scripts.length, 2, 'The homepage should initialize its cloth and project previews');
     for (const script of scripts) {
@@ -31,19 +38,19 @@ test('the built homepage versions its cloth and project preview assets', async (
     assert.ok(bundles.some(bundle => bundle.includes(terrain)), 'The globe renderer must reference the deployed terrain');
     const triggers = [...html.matchAll(/<a\b[^>]*\bdata-world-preview-trigger\b[^>]*>/g)];
     assert.equal(triggers.length, 1, 'Only world generator should trigger a globe preview');
-    assert.match(triggers[0][0], /href="https:\/\/birlumbus\.github\.io\/world-generator\/"/, 'The preview link must retain direct project navigation');
+    assert.match(triggers[0][0], /href="\/world-generator\/"/, 'The preview link must retain direct project navigation');
     const starTriggers = [...html.matchAll(/<a\b[^>]*\bdata-starfield-preview-trigger\b[^>]*>/g)];
     assert.equal(starTriggers.length, 1, 'Starfield should also have its own preview trigger');
-    assert.match(starTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/starfield\/"/, 'Starfield must retain direct project navigation');
+    assert.match(starTriggers[0][0], /href="\/starfield\/"/, 'Starfield must retain direct project navigation');
     assert.ok(files.some(file => /^starfield-preview-renderer\.[\w-]+\.js$/.test(file)), 'The starfield preview must be deployed as a versioned lazy renderer');
     const trebuchetTriggers = [...html.matchAll(/<a\b[^>]*\bdata-trebuchet-preview-trigger\b[^>]*>/g)];
     assert.equal(trebuchetTriggers.length, 1, 'Trebuchet needs its own preview trigger');
-    assert.match(trebuchetTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/trebuchet\/"/, 'Trebuchet must retain direct project navigation');
+    assert.match(trebuchetTriggers[0][0], /href="\/trebuchet\/"/, 'Trebuchet must retain direct project navigation');
     assert.match(html, /data-trebuchet-preview[^>]*aria-hidden="true"/, 'The decorative trebuchet stays out of the accessibility tree');
     assert.ok(files.some(file => /^trebuchet-preview-renderer\.[\w-]+\.js$/.test(file)), 'The trebuchet renderer must have a build-generated versioned URL');
     const chimesTriggers = [...html.matchAll(/<a\b[^>]*\bdata-chimes-preview-trigger\b[^>]*>/g)];
     assert.equal(chimesTriggers.length, 1, 'Chimes needs its own hover and keyboard preview trigger');
-    assert.match(chimesTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/floating-chimes\/"/, 'Chimes must retain direct project navigation');
+    assert.match(chimesTriggers[0][0], /href="\/floating-chimes\/"/, 'Chimes must retain direct project navigation');
     assert.match(html, /data-chimes-preview[^>]*aria-hidden="true"/, 'The decorative chimes preview must stay out of the accessibility tree');
     const chimesRenderer = files.find(file => /^chimes-preview-renderer\.[\w-]+\.js$/.test(file));
     assert.ok(chimesRenderer, 'The chimes renderer must deploy as a versioned lazy asset');
@@ -51,7 +58,7 @@ test('the built homepage versions its cloth and project preview assets', async (
     assert.doesNotMatch(chimesBundle, /AudioContext|webkitAudioContext|AudioEngine/, 'Hovering chimes must never load a sound engine');
     const jellyTriggers = [...html.matchAll(/<a\b[^>]*\bdata-jellyfish-preview-trigger\b[^>]*>/g)];
     assert.equal(jellyTriggers.length, 1, 'Jellyfish needs its own preview trigger');
-    assert.match(jellyTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/pretext\/"/, 'Jellyfish must retain direct project navigation');
+    assert.match(jellyTriggers[0][0], /href="\/pretext\/"/, 'Jellyfish must retain direct project navigation');
     assert.match(html, /data-jellyfish-preview[^>]*aria-hidden="true"/, 'The decorative jellyfish preview must stay out of the accessibility tree');
     assert.ok(files.some(file => /^jellyfish-preview-renderer\.[\w-]+\.js$/.test(file)), 'The jellyfish renderer must have a build-generated versioned URL');
     assert.equal((await stat(join(output, 'licenses/pretext.txt'))).size > 0, true, 'The bundled text layout library license must be deployed');

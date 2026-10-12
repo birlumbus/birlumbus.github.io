@@ -687,6 +687,7 @@ function handleStarfieldPointerDown(event) {
 function handleStarfieldPointerMove(event) {
   if (!state.host?.isConnected) return;
 
+  state.shell?.classList.add("has-interacted");
   state.pendingPointer = {x: event.clientX, y: event.clientY};
 
   // Keep tracking through arrival so looking around starts from the cursor's
