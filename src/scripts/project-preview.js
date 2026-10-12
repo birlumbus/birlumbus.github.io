@@ -13,6 +13,12 @@ const previews = [
     element: document.querySelector('[data-starfield-preview]'),
     load: canvas => import('./starfield-preview-renderer.js').then(module => module.createStarfieldPreview(canvas)),
   },
+  {
+    name: 'Jellyfish',
+    trigger: document.querySelector('[data-jellyfish-preview-trigger]'),
+    element: document.querySelector('[data-jellyfish-preview]'),
+    load: canvas => import('./jellyfish-preview-renderer.js').then(module => module.createJellyfishPreview(canvas)),
+  },
 ].filter(preview => preview.trigger && preview.element);
 
 let hovered = null, focused = null, active = null, revision = 0;

@@ -36,6 +36,13 @@ test('the built homepage versions its cloth and project preview assets', async (
     assert.equal(starTriggers.length, 1, 'Starfield should also have its own preview trigger');
     assert.match(starTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/starfield\/"/, 'Starfield must retain direct project navigation');
     assert.ok(files.some(file => /^starfield-preview-renderer\.[\w-]+\.js$/.test(file)), 'The starfield preview must be deployed as a versioned lazy renderer');
+    const jellyTriggers = [...html.matchAll(/<a\b[^>]*\bdata-jellyfish-preview-trigger\b[^>]*>/g)];
+    assert.equal(jellyTriggers.length, 1, 'Jellyfish needs its own preview trigger');
+    assert.match(jellyTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/pretext\/"/, 'Jellyfish must retain direct project navigation');
+    assert.match(html, /data-jellyfish-preview[^>]*aria-hidden="true"/, 'The decorative jellyfish preview must stay out of the accessibility tree');
+    assert.ok(files.some(file => /^jellyfish-preview-renderer\.[\w-]+\.js$/.test(file)), 'The jellyfish renderer must have a build-generated versioned URL');
+    assert.equal((await stat(join(output, 'licenses/pretext.txt'))).size > 0, true, 'The bundled text layout library license must be deployed');
+
   } finally {
     await rm(output, { recursive: true, force: true });
   }
