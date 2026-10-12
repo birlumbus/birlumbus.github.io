@@ -1,4 +1,5 @@
 const hover = matchMedia('(hover: hover) and (pointer: fine)');
+const stacked = matchMedia('(max-width: 700px), (hover: none) and (pointer: coarse)');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const previews = [
   {
@@ -46,7 +47,7 @@ function syncMotion() {
 }
 
 async function update() {
-  const next = hovered ?? focused;
+  const next = stacked.matches ? null : hovered ?? focused;
   if (next === active) return;
   active = next;
   const request = ++revision;
@@ -77,7 +78,7 @@ for (const preview of previews) {
   preview.inView = true;
   let origin = null;
   preview.trigger.addEventListener('pointerenter', event => {
-    if (event.pointerType === 'touch' || !hover.matches) return;
+    if (stacked.matches || event.pointerType === 'touch' || !hover.matches) return;
     hovered = preview;
     origin = { x: event.clientX, y: event.clientY };
     void update();
@@ -115,6 +116,7 @@ for (const preview of previews) observer.observe(preview.trigger);
 hover.addEventListener('change', () => {
   if (!hover.matches) { hovered = null; void update(); }
 });
+stacked.addEventListener('change', () => { void update(); });
 reduced.addEventListener('change', syncMotion);
 document.addEventListener('visibilitychange', syncMotion);
 window.addEventListener('pagehide', () => previews.forEach(preview => preview.renderer?.pause()));

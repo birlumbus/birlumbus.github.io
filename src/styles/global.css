@@ -163,6 +163,23 @@ html.cloth-home {
   position: relative;
 }
 
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
+  html.cloth-home,
+  .cloth-home body {
+    overflow: hidden;
+    overscroll-behavior: none;
+    /* Keep one-finger drags with the cloth while allowing browser zoom. */
+    touch-action: pinch-zoom;
+  }
+
+  .cloth-home body {
+    position: fixed;
+    inset: 0;
+    min-height: 0;
+    height: 100dvh;
+  }
+}
+
 .cloth-home .project-card {
   user-select: none;
   backdrop-filter: blur(7px);

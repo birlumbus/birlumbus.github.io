@@ -76,8 +76,9 @@ const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length)
     transition: transform 160ms ease;
   }
   .project-link:is(:hover, :focus-visible)::after { transform: scaleX(1); }
-  @media (max-width: 420px) {
-    .project-links { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 12px 10px; }
+  @media (max-width: 700px), (hover: none) and (pointer: coarse) {
+    .home-links { min-height: 0; height: 100%; padding-block: min(2rem, 4dvh); }
+    .project-links { align-items: center; gap: clamp(0px, 2dvh, 12px); }
     .project-links-row { display: contents; }
   }
   @media (prefers-reduced-motion: reduce) { .project-link::after { transition: none; } }
