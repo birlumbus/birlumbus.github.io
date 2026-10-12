@@ -3,34 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Ripple</title>
+  <meta name="theme-color" content="#101017" />
+  <meta name="description" content="Sweep across colorful glass chimes and explore ten musical moods." />
+  <title>chimes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-
-  <canvas id="canvas"></canvas>
-
-  <!-- Click anywhere to unlock audio (required by browsers). -->
-  <button type="button" id="unlock-overlay" class="unlock-overlay unlock-overlay--text" aria-label="Click to begin">
-    <span class="unlock-message">click to begin</span>
-    <span id="browser-note" class="unlock-note" hidden>(best in chrome)</span>
-  </button>
-
-  <!-- First-load onboarding hint. Fades out on first pointer/touch event. -->
-  <div id="hint">move to listen</div>
-
-  <!-- Preset controls. Built dynamically by main.js. -->
-  <div id="presets">
-    <div id="voice-row" class="chip-row" aria-label="Voice preset"></div>
-    <div id="chord-pad-grid" class="chord-pad-grid" aria-label="Chord pads"></div>
-    <div id="key-panel" class="key-panel" aria-label="Selected chord key">
-      <div id="key-panel-title" class="key-panel-title" aria-live="polite"></div>
-      <div id="key-row" class="key-row"></div>
-    </div>
+<body class="is-locked">
+  <header class="masthead">
+    <span id="audio-status" class="sound-status" role="status"><span aria-hidden="true"></span>Sound off</span>
+  </header>
+  <canvas id="canvas" aria-label="Eight glass chimes. Enable sound, then tap or sweep across them to play."></canvas>
+  <div class="unlock-prompt" id="unlock-prompt">
+    <button type="button" id="unlock-overlay" aria-label="Enable sound">
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 8h3l4-3v10l-4-3H3V8Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M13 7c1.5 1.6 1.5 4.4 0 6m2-8c2.8 2.8 2.8 7.2 0 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Enable sound
+    </button>
+    <span class="unlock-caption">Then tap or sweep across the glass</span>
+    <span id="browser-note" class="unlock-note" hidden>Best in Chrome</span>
   </div>
-
-  <!-- Single ES-module entry point. All other files are imported from here. -->
+  <div id="hint">Tap or sweep across the glass</div>
+  <section id="presets" class="instrument-shelf" aria-label="Instrument controls">
+    <div class="shelf-summary">
+      <div class="voice-control">
+        <span class="control-label" id="voice-label">Voice</span>
+        <div id="voice-row" class="chip-row" role="group" aria-labelledby="voice-label"></div>
+      </div>
+      <div class="mobile-controls">
+        <button class="chooser" id="mood-toggle" type="button" aria-expanded="false" aria-controls="mood-panel">
+          <span class="control-label">Mood</span><span class="chooser-value" id="selected-mood">Mist</span><span class="chooser-chevron" aria-hidden="true"></span>
+        </button>
+        <button class="chooser" id="key-toggle" type="button" aria-expanded="false" aria-controls="key-panel">
+          <span class="control-label">Key</span><span class="chooser-value" id="selected-key">E</span><span class="chooser-chevron" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+    <div id="mood-panel" class="shelf-panel">
+      <div class="panel-heading"><h2 id="mood-label">Mood</h2></div>
+      <div id="chord-pad-grid" class="chord-pad-grid" role="group" aria-labelledby="mood-label"></div>
+    </div>
+    <div id="key-panel" class="shelf-panel key-panel">
+      <h2 id="key-label">Key <span class="keyboard-hint" title="Arrow keys change the key anywhere on the page" aria-hidden="true"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span></h2>
+      <span id="key-keyboard-help" class="sr-only">Arrow keys change the key anywhere on the page. Up and down move between rows.</span>
+      <div id="key-row" class="key-row" role="group" aria-labelledby="key-label" aria-describedby="key-keyboard-help"></div>
+      <div id="key-panel-title" class="key-panel-title" aria-live="polite"></div>
+    </div>
+  </section>
   <script type="module" src="main.js"></script>
-
 </body>
 </html>

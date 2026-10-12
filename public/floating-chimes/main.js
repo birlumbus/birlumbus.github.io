@@ -1,33 +1,25 @@
-// main.js — entry point for the ripple wind-chime demo.
+// main.js — entry point for the suspended-glass chime instrument.
 //
 // Responsibilities:
-//   • Creates 8 Chime instances at the hand-tuned layout positions.
+//   • Creates 8 Chime instances in a balanced row.
 //   • Runs the rAF animation loop (physics update + render).
-//   • Handles pointermove crossing detection (works for mouse and touch via
-//     the Pointer Events API, which browsers normalize from touch).
+//   • Handles taps and directional sweeps against each pane's current pose.
 //   • Manages chord/voice preset state and builds the pad/key UI.
 //   • Unlocks the AudioContext after the user dismisses the start overlay (click).
 
 import { CHORDS, VOICES } from './presets.js';
 import { AudioEngine } from './audio.js';
 import { Chime } from './chime.js';
+import { ChimeInteraction } from './interaction.js';
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
-// Hand-tuned positions from the plan. Values are {xPercent, yCenterPercent,
-// heightPercent} — no two strands at the same height, deliberate irregularity.
+// Equal lengths and spacing let the color and resonance carry the scene.
+const LAYOUT = Array.from({ length: 8 }, (_, i) => ({
+  xPercent: (i + 0.5) * 100 / 8,
+  yCenterPercent: 42,
+  heightPercent: 80,
+}));
 
-const LAYOUT = [
-  { xPercent:  8, yCenterPercent: 45, heightPercent: 45 },
-  { xPercent: 19, yCenterPercent: 60, heightPercent: 35 },
-  { xPercent: 28, yCenterPercent: 38, heightPercent: 55 },
-  { xPercent: 42, yCenterPercent: 55, heightPercent: 40 },
-  { xPercent: 53, yCenterPercent: 42, heightPercent: 50 },
-  { xPercent: 65, yCenterPercent: 60, heightPercent: 38 },
-  { xPercent: 76, yCenterPercent: 45, heightPercent: 52 },
-  { xPercent: 89, yCenterPercent: 55, heightPercent: 42 },
-];
-
-const CHORD_GRID_COLUMNS = 5;
 const KEY_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const NOTE_TO_SEMITONE = new Map([
   ['C', 0], ['B#', 0],
@@ -54,8 +46,21 @@ const browserNote    = document.getElementById('browser-note');
 const chordPadGrid   = document.getElementById('chord-pad-grid');
 const keyPanelTitle  = document.getElementById('key-panel-title');
 const keyRow         = document.getElementById('key-row');
+const presets        = document.getElementById('presets');
+const masthead       = document.querySelector('.masthead');
+const unlockPrompt   = document.getElementById('unlock-prompt');
+const audioStatus    = document.getElementById('audio-status');
+const moodPanel      = document.getElementById('mood-panel');
+const keyPanel       = document.getElementById('key-panel');
+const moodToggle     = document.getElementById('mood-toggle');
+const keyToggle      = document.getElementById('key-toggle');
+const selectedMood   = document.getElementById('selected-mood');
+const keySummary     = document.getElementById('selected-key');
+const compactLayout  = window.matchMedia('(max-width: 900px), (max-height: 640px)');
+const reducedMotion  = window.matchMedia('(prefers-reduced-motion: reduce)');
+let openPanel = null;
 
-const DEFAULT_CHORD_IDX = CHORDS.findIndex(c => c.name.startsWith('Aurora'));
+const DEFAULT_CHORD_IDX = CHORDS.findIndex(c => c.shortName === 'Mist');
 let chordIdx  = DEFAULT_CHORD_IDX >= 0 ? DEFAULT_CHORD_IDX : 0;
 let voiceIdx  = 0;
 let prevChordIdx = chordIdx;
@@ -68,15 +73,16 @@ let audioReady = false;
 
 const audio  = new AudioEngine();
 const chimes = LAYOUT.map(cfg => new Chime(cfg));
+const interaction = new ChimeInteraction(chimes);
 const chordRootSemitones = CHORDS.map(chord => noteToSemitone(chord.root));
 const chordKeySemitones = chordRootSemitones.slice();
 const chordButtons = [];
-const chordButtonLabels = [];
+const chordButtonNames = [];
 const keyButtons = [];
 
 if (browserNote && /\bFirefox\//.test(navigator.userAgent)) {
   browserNote.hidden = false;
-  unlockOverlay.setAttribute('aria-label', 'Click to begin. Best in Chrome.');
+  unlockOverlay.setAttribute('aria-label', 'Enable sound. Best in Chrome.');
 }
 
 // ─── Note/key helpers ───────────────────────────────────────────────────────
@@ -121,7 +127,16 @@ function resize() {
   canvas.style.height = h + 'px';
   // Hit-area buffer: larger on touch/coarse-pointer devices
   const hitBuf = window.matchMedia('(pointer: coarse)').matches ? 28 : 16;
-  chimes.forEach(c => c.resize(w, h, hitBuf));
+  const stageTop = masthead.getBoundingClientRect().bottom + 20;
+  const stageBottom = presets.getBoundingClientRect().top - 22;
+  const availableHeight = stageBottom - stageTop;
+  // The lowest pane ends at 82% of the stage. Leave room for the sound
+  // invitation on short screens as well as for the resting hint.
+  const stageHeight = Math.max(50, Math.min(availableHeight, (availableHeight - 82) / 0.82));
+  document.documentElement.style.setProperty('--stage-top', `${stageTop}px`);
+  document.documentElement.style.setProperty('--stage-bottom', `${stageBottom}px`);
+  chimes.forEach(c => c.resize(w, stageHeight, hitBuf, stageTop));
+  interaction.clear();
 }
 
 // ─── Adjacent-note helper ────────────────────────────────────────────────────
@@ -145,7 +160,7 @@ function frame(timestamp) {
   const delta = Math.min(0.1, (timestamp - lastTimestamp) / 1000); // cap at 100 ms
   lastTimestamp = timestamp;
 
-  globalPhase += delta * 0.42; // same rate as Swift animationPhase
+  if (!reducedMotion.matches) globalPhase += delta * 0.42;
 
   if (crossfadeT < 1) {
     crossfadeT = Math.min(1, crossfadeT + delta / 0.6); // 600 ms crossfade
@@ -164,97 +179,94 @@ function frame(timestamp) {
   ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx2d.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
+  // Light from the glass colors the room before the panes are drawn.
+  for (const chime of chimes) {
+    chime.renderLight(ctx2d, chord, globalPhase, crossfadeT, prevChord, reducedMotion.matches);
+  }
+
   // Render all chimes
   for (const chime of chimes) {
-    chime.render(ctx2d, chord, globalPhase, crossfadeT, prevChord);
+    chime.render(ctx2d, chord, globalPhase, crossfadeT, prevChord, reducedMotion.matches);
   }
 
   requestAnimationFrame(frame);
 }
 
-// ─── Crossing detection ───────────────────────────────────────────────────────
-//
-// The cursor is treated as a moving line segment from the previous pointer
-// position to the current one. We check if that segment crosses the chime's
-// vertical centerline x, and if the crossing y is within the strand's height.
-// This handles fast sweeps that skip from one side to the other between frames.
+// ─── Direct play ──────────────────────────────────────────────────────────
+// Track each contact independently so separate fingers never create a phantom
+// sweep between their positions. Mouse hover still plays as it did originally.
+function pointerSample(event) {
+  return {
+    pointerId: event.pointerId,
+    pointerType: event.pointerType,
+    x: event.clientX,
+    y: event.clientY,
+    t: event.timeStamp,
+  };
+}
 
-let prevPointer = null;
-
-function onPointerMove(e) {
-  if (!audioReady) return;
-
-  const px = e.clientX, py = e.clientY;
-  const now = e.timeStamp;
-
-  // Re-activate if the browser suspended the context after a tab switch.
-  audio.unlock().catch(() => {});
-
+function strikeChime(chime, hit, strength, { silent = false, gentle = false } = {}) {
+  const chord = CHORDS[chordIdx];
+  const voiceType = VOICES[voiceIdx].type;
+  const note = chime.strike(hit.y, strength, hit.direction, { gentle });
+  const freq = chord.freqs[note % chord.freqs.length] * chordTransposeFactor(chordIdx);
   if (!interacted) {
     interacted = true;
     hint.classList.add('hidden');
   }
-
-  if (prevPointer !== null) {
-    const { x: ox, y: oy, t: ot } = prevPointer;
-    const dt = Math.max(0.001, (now - ot) / 1000);
-    const dist = Math.hypot(px - ox, py - oy);
-    const speed = dist / dt;
-
-    // Velocity-modulated strike strength (0.1 floor so slow sweeps still ring)
-    const strength = 0.1 + 0.9 * Math.min(1, speed / 480);
-
-    const chord      = CHORDS[chordIdx];
-    const voiceType  = VOICES[voiceIdx].type;
-    const transpose  = chordTransposeFactor(chordIdx);
-
-    for (let i = 0; i < chimes.length; i++) {
-      const chime = chimes[i];
-      const crossY = crossingY(ox, oy, px, py, chime);
-      if (crossY === null) continue;
-
-      const note = chime.strike(crossY, strength);
-      const freq = chord.freqs[note % chord.freqs.length] * transpose;
-      audio.playNote(freq, strength, voiceType);
-    }
+  if (!silent) {
+    // Await resume so the first tap after returning to the tab is audible.
+    audio.unlock().then(() => {
+      if (audio.isUnlocked) audio.playNote(freq, strength, voiceType);
+    }).catch(() => {});
   }
-
-  prevPointer = { x: px, y: py, t: now };
 }
 
-// Returns the y coordinate where the segment (ox,oy)→(cx,cy) crosses the
-// chime's vertical centerline, or null if no valid crossing exists.
-function crossingY(ox, oy, cx, cy, chime) {
-  const dx = cx - ox;
-  if (Math.abs(dx) < 0.5) return null; // nearly vertical motion: skip
+function onPointerDown(event) {
+  if (!audioReady || event.target !== canvas || event.button !== 0) return;
+  const strike = interaction.press(pointerSample(event), reducedMotion.matches);
+  if (strike) strikeChime(strike.chime, strike.hit, strike.strength, { silent: strike.silent, gentle: true });
+}
 
-  const prevLeft = ox < chime.x;
-  const currLeft = cx < chime.x;
-
-  if (prevLeft === currLeft) {
-    // Both on the same side: only trigger if the segment passes all the way
-    // through the strand (prev outside left edge, curr outside right edge or vice versa)
-    const minX = ox < cx ? ox : cx;
-    const maxX = ox < cx ? cx : ox;
-    if (minX <= chime.hitLeft && maxX >= chime.hitRight) {
-      // Full pass-through: compute y at the centerline
-      const t = (chime.x - ox) / dx;
-      const y = oy + (cy - oy) * t;
-      if (y < chime.top || y > chime.top + chime.height) return null;
-      return y;
-    }
-    return null;
+function onPointerMove(event) {
+  if (!audioReady || event.target !== canvas) {
+    interaction.leave(event.pointerId);
+    return;
   }
+  const { clientX: x, clientY: y } = event;
+  if (event.pointerType === 'mouse') {
+    canvas.style.cursor = chimes.some(chime => chime.hitAt(x, y, 0, reducedMotion.matches)) ? 'pointer' : 'default';
+  }
+  for (const strike of interaction.move(pointerSample(event), reducedMotion.matches)) {
+    strikeChime(strike.chime, strike.hit, strike.strength);
+  }
+}
 
-  // Centerline crossing: prev and curr are on opposite sides
-  const t = (chime.x - ox) / dx;
-  if (t < 0 || t > 1) return null;
-  const y = oy + (cy - oy) * t;
-  if (y < chime.top || y > chime.top + chime.height) return null;
-  return y;
+function clearPointers() {
+  interaction.clear();
 }
 
 // ─── Preset controls ─────────────────────────────────────────────────────────
+
+function setOpenPanel(name, { restoreFocus = false } = {}) {
+  const previousToggle = openPanel === 'mood' ? moodToggle : keyToggle;
+  openPanel = compactLayout.matches ? name : null;
+  moodPanel.hidden = compactLayout.matches && openPanel !== 'mood';
+  keyPanel.hidden = compactLayout.matches && openPanel !== 'key';
+  moodToggle.setAttribute('aria-expanded', String(openPanel === 'mood'));
+  keyToggle.setAttribute('aria-expanded', String(openPanel === 'key'));
+  if (restoreFocus && compactLayout.matches) previousToggle.focus({ preventScroll: true });
+}
+
+moodToggle.addEventListener('click', () => setOpenPanel(openPanel === 'mood' ? null : 'mood'));
+keyToggle.addEventListener('click', () => setOpenPanel(openPanel === 'key' ? null : 'key'));
+document.addEventListener('pointerdown', event => {
+  if (openPanel && !presets.contains(event.target)) setOpenPanel(null);
+});
+compactLayout.addEventListener('change', () => {
+  setOpenPanel(null);
+  resize();
+});
 
 function buildChips(rowId, items, getIdx, setIdx) {
   const row = document.getElementById(rowId);
@@ -289,7 +301,7 @@ function resetChimesForChord(index) {
   });
 }
 
-function selectChord(index, { focusPad = false } = {}) {
+function selectChord(index) {
   const nextIndex = wrapIndex(index, CHORDS.length);
   if (nextIndex !== chordIdx) {
     prevChordIdx = chordIdx;
@@ -301,8 +313,8 @@ function selectChord(index, { focusPad = false } = {}) {
   updateChordPads();
   updateKeyPanel();
 
-  if (focusPad && chordButtons[chordIdx]) {
-    chordButtons[chordIdx].focus({ preventScroll: true });
+  if (openPanel === 'mood') {
+    setOpenPanel(null, { restoreFocus: true });
   }
 }
 
@@ -311,19 +323,30 @@ function buildChordPads() {
   CHORDS.forEach((chord, i) => {
     const btn = document.createElement('button');
     const name = document.createElement('span');
-    const label = document.createElement('span');
+    const spectrum = document.createElement('span');
 
     btn.type = 'button';
     btn.className = 'chord-pad';
     btn.addEventListener('click', () => selectChord(i));
 
     name.className = 'chord-pad__name';
-    label.className = 'chord-pad__chord';
 
-    btn.append(name, label);
+    const colors = chord.colors.map(color => color.map(c => Math.round(c * 255)));
+    spectrum.className = 'mood-spectrum';
+    spectrum.setAttribute('aria-hidden', 'true');
+    colors.forEach((color, j) => {
+      const segment = document.createElement('span');
+      segment.style.setProperty('--segment-color', color.join(','));
+      segment.style.left = j % 2 ? '68%' : '28%';
+      segment.style.top = `${j * 100 / (colors.length - 1)}%`;
+      spectrum.appendChild(segment);
+    });
+    const accent = colors[Math.min(1, colors.length - 1)];
+    btn.style.setProperty('--pad-accent', accent.join(','));
+    btn.append(spectrum, name);
     chordPadGrid.appendChild(btn);
     chordButtons[i] = btn;
-    chordButtonLabels[i] = { name, label };
+    chordButtonNames[i] = name;
   });
 
   updateChordPads();
@@ -332,16 +355,23 @@ function buildChordPads() {
 function updateChordPads() {
   CHORDS.forEach((chord, i) => {
     const btn = chordButtons[i];
-    const labels = chordButtonLabels[i];
     const active = i === chordIdx;
-    const label = chordLabel(i);
-
-    labels.name.textContent = chord.shortName;
-    labels.label.textContent = label;
+    chordButtonNames[i].textContent = chord.shortName;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    btn.setAttribute('aria-label', `${chord.shortName} ${label}`);
+    btn.setAttribute('aria-label', chord.shortName);
   });
+}
+
+function selectKey(index, { focusKey = false, closePanel = true } = {}) {
+  const nextIndex = wrapIndex(index, KEY_NAMES.length);
+  chordKeySemitones[chordIdx] = nextIndex;
+  updateKeyPanel();
+  if (focusKey) {
+    keyButtons[nextIndex].focus({ preventScroll: true });
+  } else if (closePanel && openPanel === 'key') {
+    setOpenPanel(null, { restoreFocus: true });
+  }
 }
 
 function buildKeyButtons() {
@@ -351,11 +381,7 @@ function buildKeyButtons() {
     btn.type = 'button';
     btn.className = 'key-button';
     btn.textContent = keyName;
-    btn.addEventListener('click', () => {
-      chordKeySemitones[chordIdx] = i;
-      updateChordPads();
-      updateKeyPanel();
-    });
+    btn.addEventListener('click', () => selectKey(i));
     keyRow.appendChild(btn);
     keyButtons[i] = btn;
   });
@@ -368,7 +394,9 @@ function updateKeyPanel() {
   const selectedKey = chordKeySemitones[chordIdx];
   const selectedLabel = chordLabel(chordIdx);
 
-  keyPanelTitle.textContent = `${chord.shortName} ${selectedLabel}`;
+  keyPanelTitle.textContent = selectedLabel;
+  selectedMood.textContent = chord.shortName;
+  keySummary.textContent = KEY_NAMES[selectedKey];
   keyRow.setAttribute('aria-label', `${chord.shortName} key`);
 
   keyButtons.forEach((btn, i) => {
@@ -376,16 +404,9 @@ function updateKeyPanel() {
     const label = `${KEY_NAMES[i]}${chord.suffix}`;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    btn.setAttribute('aria-label', `${chord.shortName} ${label}`);
+    btn.setAttribute('aria-label', label);
+    btn.tabIndex = active ? 0 : -1;
   });
-}
-
-function chordGridIndex(row, col) {
-  const rowCount = Math.ceil(CHORDS.length / CHORD_GRID_COLUMNS);
-  const wrappedRow = wrapIndex(row, rowCount);
-  const wrappedCol = wrapIndex(col, CHORD_GRID_COLUMNS);
-  const index = wrappedRow * CHORD_GRID_COLUMNS + wrappedCol;
-  return index < CHORDS.length ? index : wrappedCol % CHORDS.length;
 }
 
 function isTextEntryTarget(target) {
@@ -396,24 +417,25 @@ function isTextEntryTarget(target) {
 function onKeyDown(event) {
   if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
   if (isTextEntryTarget(event.target)) return;
-
-  const row = Math.floor(chordIdx / CHORD_GRID_COLUMNS);
-  const col = chordIdx % CHORD_GRID_COLUMNS;
-  let nextIndex = null;
-
-  if (event.key === 'ArrowLeft') {
-    nextIndex = chordGridIndex(row, col - 1);
-  } else if (event.key === 'ArrowRight') {
-    nextIndex = chordGridIndex(row, col + 1);
-  } else if (event.key === 'ArrowUp') {
-    nextIndex = chordGridIndex(row - 1, col);
-  } else if (event.key === 'ArrowDown') {
-    nextIndex = chordGridIndex(row + 1, col);
+  if (event.key === 'Escape' && openPanel) {
+    setOpenPanel(null, { restoreFocus: true });
+    return;
   }
-
-  if (nextIndex === null) return;
+  // Read the key grid even when the phone's key chooser is closed.
+  const columns = Number(getComputedStyle(keyRow).getPropertyValue('--key-columns'));
+  let step;
+  switch (event.key) {
+    case 'ArrowLeft': step = -1; break;
+    case 'ArrowRight': step = 1; break;
+    case 'ArrowUp': step = -columns; break;
+    case 'ArrowDown': step = columns; break;
+    default: return;
+  }
   event.preventDefault();
-  selectChord(nextIndex, { focusPad: true });
+  selectKey(chordKeySemitones[chordIdx] + step, {
+    focusKey: keyRow.contains(event.target),
+    closePanel: false,
+  });
 }
 
 buildChordPads();
@@ -435,8 +457,16 @@ async function dismissUnlockOverlay() {
   if (!audio.isUnlocked) return;
 
   audioReady = true;
-  unlockOverlay.classList.add('unlock-overlay--dismissed');
+  unlockPrompt.classList.add('unlock-prompt--dismissed');
   unlockOverlay.setAttribute('aria-hidden', 'true');
+  unlockOverlay.disabled = true;
+  document.body.classList.remove('is-locked');
+  audioStatus.classList.add('is-on');
+  audioStatus.replaceChildren();
+  const statusDot = document.createElement('span');
+  statusDot.setAttribute('aria-hidden', 'true');
+  audioStatus.append(statusDot, 'Sound on');
+  canvas.setAttribute('aria-label', 'Eight glass chimes. Tap or sweep across them to play.');
 }
 
 unlockOverlay.addEventListener('click', (e) => {
@@ -445,9 +475,19 @@ unlockOverlay.addEventListener('click', (e) => {
 });
 
 window.addEventListener('resize', resize);
+window.addEventListener('pointerdown', onPointerDown, { passive: true });
 window.addEventListener('pointermove', onPointerMove, { passive: true });
 window.addEventListener('keydown', onKeyDown);
+window.addEventListener('pointerout', event => { if (!event.relatedTarget) interaction.leave(event.pointerId); });
+window.addEventListener('pointercancel', event => interaction.leave(event.pointerId));
+window.addEventListener('blur', clearPointers);
+window.addEventListener('pointerup', event => interaction.release(event.pointerId, event.pointerType));
 
+setOpenPanel(null);
+hint.textContent = 'Tap or sweep across the glass';
+const layoutObserver = new ResizeObserver(resize);
+layoutObserver.observe(presets);
+layoutObserver.observe(masthead);
+document.fonts.ready.then(resize);
 resize();
-canvas.classList.add('loaded');
 requestAnimationFrame(frame);

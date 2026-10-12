@@ -11,9 +11,7 @@
 // Softened top/bottom boundaries lightly clamp the wave near the ends so
 // strikes feel liquid instead of turning into harsh standing-wave stripes.
 //
-// Rendering uses four canvas passes (outer glow, base strand, depth shading,
-// shimmer highlights) mirroring drawLiquidRing / drawRippleDepth /
-// drawRippleHighlights in the Swift source.
+// The original wave field drives refracted light inside suspended glass panes.
 
 // ─── Palette utility ────────────────────────────────────────────────────────
 
@@ -34,6 +32,14 @@ export function paletteColorAt(colors, position) {
   ];
 }
 
+function glassColorAt(chord, position, crossfade = 1, prevChord = null) {
+  const current = paletteColorAt(chord.colors, position);
+  const previous = prevChord && crossfade < 1 ? paletteColorAt(prevChord.colors, position) : current;
+  const mixed = current.map((value, i) => previous[i] + (value - previous[i]) * crossfade);
+  const brightest = Math.max(...mixed);
+  return mixed.map(value => Math.max(0, brightest - (brightest - value) * 1.25) * 255);
+}
+
 function roundedRectPath(ctx, x, y, width, height, radius) {
   const r = Math.min(radius, width * 0.5, height * 0.5);
   ctx.beginPath();
@@ -49,12 +55,12 @@ function roundedRectPath(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-const LAYOUT_VIEWPORT_RATIO = 0.68;
+const LAYOUT_VIEWPORT_RATIO = 0.74;
 const MIN_LAYOUT_WIDTH = 560;
-const MAX_LAYOUT_WIDTH = 800;
+const MAX_LAYOUT_WIDTH = 900;
 const VERTICAL_SAMPLES = 192;
 const DEPTH_BANDS = 5;
-const VISUAL_IMPULSE_SCALE = 0.8;
+const VISUAL_IMPULSE_SCALE = 1.05;
 const BASELINE_VERTICAL_SAMPLES = 96;
 const IMPULSE_RADIUS = Math.round(12 * VERTICAL_SAMPLES / BASELINE_VERTICAL_SAMPLES);
 const IMPULSE_SPREAD = 5.25 * VERTICAL_SAMPLES / BASELINE_VERTICAL_SAMPLES;
@@ -62,15 +68,18 @@ const RIPPLE_SPREAD = 0.19;
 const RIPPLE_VELOCITY_DAMPING = 0.935;
 const RIPPLE_SETTLING = 0.952;
 const RIPPLE_EDGE_DAMPING = 0.88;
-const RIPPLE_SWELL_SCALE = 3.2;
-const RIPPLE_SHEEN_THRESHOLD = 0.07;
-const RIPPLE_SHEEN_ALPHA = 0.16;
-const RIPPLE_SHEEN_WIDTH = 0.82;
 const NOTE_RELOAD_DELAY_SECONDS = 0.9;
 const NOTE_SETTLE_AMPLITUDE = 0.04;
 const PALETTE_RETUNE_RATE = 0.72;
 const PALETTE_RETUNE_SHIFT_FRACTION = 0.36;
 const PALETTE_RETUNE_EPSILON = 0.003;
+const RECOIL_STIFFNESS = 30;
+const RECOIL_DAMPING = 1.0;
+const TAP_RECOIL_SCALE = 0.12;
+const TAP_RECOIL_DAMPING = 3.8;
+const TAP_MAX_TRAVEL = 6; // pixels at the lower end, so another tap stays easy
+// The same iridescent family revealed by a passing current on the home cloth.
+const BLOOM_COLORS = [[20, 219, 194], [158, 82, 240], [255, 92, 153], [255, 194, 92]];
 
 // ─── Chime class ────────────────────────────────────────────────────────────
 
@@ -80,13 +89,24 @@ export class Chime {
    * @param {number} cfg.xPercent        horizontal position as % of viewport width
    * @param {number} cfg.yCenterPercent  vertical center as % of viewport height
    * @param {number} cfg.heightPercent   strand height as % of viewport height
-   * @param {number} [cfg.baseWidth=26]  base pixel width of the strand
+   * @param {number} [cfg.baseWidth=30]  base pixel width of the strand
    */
-  constructor({ xPercent, yCenterPercent, heightPercent, baseWidth = 26 }) {
+  constructor({ xPercent, yCenterPercent, heightPercent, baseWidth = 30 }) {
     this.xPercent = xPercent;
     this.yCenterPercent = yCenterPercent;
     this.heightPercent = heightPercent;
     this.baseWidth = baseWidth;
+    this.drawWidth = baseWidth;
+    this.strikeGlow = 0;
+    this.lightEnergy = 0;
+    this.strikeAge = 10;
+    this.lastStrikeNorm = 0.5;
+    this.motionAngle = 0;
+    this.motionVelocity = 0;
+    this.gentleMotion = false;
+    this.maxAngle = 0.1;
+    this.colorBlooms = [];
+    this.colorSequence = 0;
 
     // Wave field: high vertical resolution × depth bands, matching the
     // primary IdleDial's finer liquid surface more closely than the old demo.
@@ -115,16 +135,64 @@ export class Chime {
 
   // ── Geometry ──────────────────────────────────────────────────────────────
 
-  resize(canvasW, canvasH, hitBuffer = 16) {
+  resize(canvasW, canvasH, hitBuffer = 16, stageTop = 0) {
     const preferredBandW = Math.max(MIN_LAYOUT_WIDTH, canvasW * LAYOUT_VIEWPORT_RATIO);
-    const bandW = Math.min(canvasW, preferredBandW, MAX_LAYOUT_WIDTH);
+    const bandW = Math.min(canvasW - 24, preferredBandW, MAX_LAYOUT_WIDTH);
     const bandLeft = (canvasW - bandW) / 2;
     this.x = bandLeft + bandW * this.xPercent / 100;
-    const cy = canvasH * this.yCenterPercent / 100;
+    const cy = stageTop + canvasH * this.yCenterPercent / 100;
     this.height = canvasH * this.heightPercent / 100;
     this.top = cy - this.height / 2;
-    this.hitLeft  = this.x - this.baseWidth / 2 - hitBuffer;
-    this.hitRight = this.x + this.baseWidth / 2 + hitBuffer;
+    this.drawWidth = Math.min(this.baseWidth, canvasW < 560 ? 24 : this.baseWidth);
+    this.maxAngle = Math.min(0.14, (bandW / 8) * 0.42 / (this.height * 0.9));
+    this.motionAngle = 0;
+    this.motionVelocity = 0;
+    this.hitLeft  = this.x - this.drawWidth / 2 - hitBuffer;
+    this.hitRight = this.x + this.drawWidth / 2 + hitBuffer;
+  }
+
+  pose(reducedMotion = false) {
+    return {
+      angle: reducedMotion ? 0 : this.motionAngle,
+      pivotX: this.x,
+      pivotY: this.top + this.height * 0.1,
+    };
+  }
+
+  worldPoint(x, y, reducedMotion = false) {
+    const { angle, pivotX, pivotY } = this.pose(reducedMotion);
+    const dx = x - pivotX, dy = y - pivotY;
+    return {
+      x: pivotX + dx * Math.cos(angle) - dy * Math.sin(angle),
+      y: pivotY + dx * Math.sin(angle) + dy * Math.cos(angle),
+    };
+  }
+
+  localPoint(x, y, reducedMotion = false) {
+    const { angle, pivotX, pivotY } = this.pose(reducedMotion);
+    const dx = x - pivotX, dy = y - pivotY;
+    return {
+      x: pivotX + dx * Math.cos(angle) + dy * Math.sin(angle),
+      y: pivotY - dx * Math.sin(angle) + dy * Math.cos(angle),
+    };
+  }
+
+  hitAt(x, y, padding = 0, reducedMotion = false) {
+    const local = this.localPoint(x, y, reducedMotion);
+    const distance = Math.abs(local.x - this.x);
+    if (distance > this.drawWidth / 2 + padding || local.y < this.top || local.y > this.top + this.height) return null;
+    return { y: local.y, distance, direction: local.x > this.x ? -1 : 1 };
+  }
+
+  crossingAt(fromX, fromY, toX, toY, reducedMotion = false) {
+    const from = this.localPoint(fromX, fromY, reducedMotion);
+    const to = this.localPoint(toX, toY, reducedMotion);
+    const dx = to.x - from.x;
+    if (Math.abs(dx) < 0.5 || (from.x < this.x) === (to.x < this.x)) return null;
+    const t = (this.x - from.x) / dx;
+    const y = from.y + (to.y - from.y) * t;
+    if (y < this.top || y > this.top + this.height) return null;
+    return { y, direction: Math.sign(dx), t };
   }
 
   // ── Wave physics ──────────────────────────────────────────────────────────
@@ -197,9 +265,27 @@ export class Chime {
 
   // ── Public interaction ────────────────────────────────────────────────────
 
-  // Called when the cursor crosses this chime. Returns the loaded note index.
-  strike(yCrossing, strength) {
+  // Taps use a small movement budget; sweeps keep their directional swing.
+  // The note and internal light response share the original strike strength.
+  strike(yCrossing, strength, direction = 1, { gentle = false } = {}) {
+    this.gentleMotion = gentle;
+    this.strikeGlow = Math.max(this.strikeGlow, strength);
     const yNorm = Math.max(0, Math.min(1, (yCrossing - this.top) / this.height));
+    this.lastStrikeNorm = yNorm;
+    this.strikeAge = 0;
+    this.lightEnergy = Math.min(1, this.lightEnergy + strength * 0.8);
+    this.colorBlooms.push({ yNorm, strength, age: 0, phase: this.colorSequence });
+    this.colorSequence = (this.colorSequence + 0.73) % BLOOM_COLORS.length;
+    if (this.colorBlooms.length > 8) this.colorBlooms.shift();
+    const impulse = -Math.sign(direction || 1) * strength * this.maxAngle * 6.6 * (0.55 + yNorm * 1.15) * (gentle ? TAP_RECOIL_SCALE : 1);
+    // Limit the energy added by another strike, rather than flattening the
+    // drawn angle near its limit. Gravity can then turn the pane immediately.
+    // A tap also absorbs a preceding mouse-entry strike. If the pane is already
+    // outside this small budget, stop its added momentum and let gravity return
+    // it naturally from the current angle, without changing its position.
+    const motionLimit = gentle ? Math.min(this.maxAngle, TAP_MAX_TRAVEL / (this.height * 0.9)) : this.maxAngle;
+    const velocityLimit = Math.sqrt(RECOIL_STIFFNESS * Math.max(0, motionLimit ** 2 - this.motionAngle ** 2));
+    this.motionVelocity = Math.max(-velocityLimit, Math.min(velocityLimit, this.motionVelocity + impulse));
     this.injectImpulse(yNorm, strength * VISUAL_IMPULSE_SCALE);
     this.lastPlayedNote = this.loadedNote;
     this.isSettled = false;
@@ -210,6 +296,26 @@ export class Chime {
   // Per-frame update: advance physics, check for settling, tween base color.
   update(delta, chordLen, adjacentNotes) {
     this.advanceRipple(delta);
+    this.strikeGlow *= Math.exp(-delta * 1.9);
+    this.lightEnergy *= Math.exp(-delta * 1.3);
+    this.strikeAge += delta;
+    for (const bloom of this.colorBlooms) bloom.age += delta;
+    this.colorBlooms = this.colorBlooms.filter(bloom => bloom.age < 8);
+
+    // Solve the damped spring analytically so rebound feels the same at every
+    // frame rate. Strike energy keeps the whole swing within its pane's space.
+    const angle = this.motionAngle, velocity = this.motionVelocity;
+    const damping = this.gentleMotion ? TAP_RECOIL_DAMPING : RECOIL_DAMPING;
+    const frequency = Math.sqrt(RECOIL_STIFFNESS - damping ** 2);
+    const decay = Math.exp(-damping * delta);
+    const sin = Math.sin(frequency * delta);
+    const cos = Math.cos(frequency * delta);
+    this.motionAngle = decay * (angle * cos + (velocity + damping * angle) / frequency * sin);
+    this.motionVelocity = decay * (velocity * cos - (damping * velocity + RECOIL_STIFFNESS * angle) / frequency * sin);
+    if (Math.abs(this.motionAngle) + Math.abs(this.motionVelocity) < 0.0001) {
+      this.motionAngle = 0;
+      this.motionVelocity = 0;
+    }
 
     if (!this.isSettled) {
       this.noteReloadTimer = Math.max(0, this.noteReloadTimer - delta);
@@ -233,169 +339,158 @@ export class Chime {
 
   // ── Rendering ─────────────────────────────────────────────────────────────
 
-  // Four-pass render onto a shared 2D canvas context. Mirrors the Swift
-  // drawLiquidRing / drawRippleDepth / drawRippleHighlights sequence.
-  //
-  // `chord`       — current chord preset { colors: [[r,g,b], …] }
-  // `globalPhase` — shared animation phase (advances at 0.42 rad/s)
-  // `crossfade`   — 0–1 blend from prevChord (0) to chord (1)
-  // `prevChord`   — chord being faded from (may equal chord when crossfade = 1)
-  render(ctx, chord, globalPhase, crossfade = 1, prevChord = null) {
-    const N = this.vSamples;
-    const D = this.dBands;
-    const midJ = D >> 1; // middle depth band index
-    const segH = this.height / (N - 1) + 1; // +1 ensures no gaps between segments
-
-    const blendColors = (pos) => {
-      const c = paletteColorAt(chord.colors, pos);
-      if (crossfade >= 1 || !prevChord) return c;
-      const p = paletteColorAt(prevChord.colors, pos);
-      const t = crossfade;
-      return [
-        p[0] + (c[0] - p[0]) * t,
-        p[1] + (c[1] - p[1]) * t,
-        p[2] + (c[2] - p[2]) * t,
-      ];
-    };
-
-    const colCount = chord.colors.length;
-    const { x, top, height, baseWidth, baseOffset, _bufA: a } = this;
-    const strandClipW = baseWidth + 14;
-    const strandClipH = height + segH;
-    const strandClipX = x - strandClipW * 0.5;
-    const strandRadius = strandClipW * 0.5;
-    const clipToRoundedStrand = () => {
-      roundedRectPath(ctx, strandClipX, top, strandClipW, strandClipH, strandRadius);
-      ctx.clip();
-    };
-
-    // Pre-compute ripple values and vertical gradients for the middle depth band.
-    // This avoids repeated buffer lookups in the inner rendering loops.
-    const ripple = new Float32Array(N);
-    const grad   = new Float32Array(N);
-    for (let i = 0; i < N; i++) {
-      const center = a[midJ * N + i];
-      const above = i > 0     ? a[midJ * N + i - 1] : center * 0.5;
-      const below = i < N - 1 ? a[midJ * N + i + 1] : center * 0.5;
-      ripple[i] = center * 0.58 + (above + below) * 0.21;
+  // A contact leaves pigment in the glass. Two soft fronts carry it away from
+  // the strike, while a smaller wash lingers at the contact point. Blend the
+  // overlapping washes before tinting so repeated taps cannot bleach the pane.
+  materialColorAt(chord, position, yNorm, crossfade = 1, prevChord = null, reducedMotion = false) {
+    const base = glassColorAt(chord, position, crossfade, prevChord);
+    let weight = 0;
+    const pigment = [0, 0, 0];
+    for (const bloom of this.colorBlooms) {
+      const distance = Math.abs(yNorm - bloom.yNorm);
+      const width = reducedMotion ? 0.09 : 0.065 + Math.min(2, bloom.age) * 0.035;
+      const core = Math.exp(-0.5 * (distance / width) ** 2);
+      const front = reducedMotion ? core : Math.exp(-0.5 * ((distance - bloom.age * 0.34) / width) ** 2);
+      const presence = bloom.strength * Math.exp(-bloom.age * 0.9) * (core * 0.45 + front * 0.9);
+      if (presence < 0.0001) continue;
+      const phase = bloom.phase + (reducedMotion ? 0 : bloom.age * 0.38 + yNorm * 0.5);
+      const color = paletteColorAt(BLOOM_COLORS, phase);
+      weight += presence;
+      for (let i = 0; i < 3; i++) pigment[i] += color[i] * presence;
     }
-    for (let i = 0; i < N; i++) {
-      const above = i > 0     ? ripple[i - 1] : ripple[i] * 0.5;
-      const below = i < N - 1 ? ripple[i + 1] : ripple[i] * 0.5;
-      grad[i] = below - above;
-    }
+    if (!weight) return base;
+    const amount = Math.min(0.82, 1 - Math.exp(-weight * 2));
+    return base.map((value, i) => value + (pigment[i] / weight - value) * amount);
+  }
 
-    // ── Pass 1: Soft outer glow ────────────────────────────────────────────
-    // Single rect with shadowBlur — creates the diffuse bloom visible on a
-    // dark background. Color follows the loaded note's palette position.
-    {
-      const [gr, gg, gb] = blendColors(baseOffset + globalPhase * 0.3);
-      ctx.save();
-      ctx.shadowBlur = 32;
-      ctx.shadowColor = `rgb(${gr * 255 | 0},${gg * 255 | 0},${gb * 255 | 0})`;
-      ctx.fillStyle   = `rgba(${gr * 255 | 0},${gg * 255 | 0},${gb * 255 | 0},0.04)`;
-      roundedRectPath(ctx, x - baseWidth * 0.8, top - 12, baseWidth * 1.6, height + 24, baseWidth * 0.8);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // ── Pass 2: Base strand ────────────────────────────────────────────────
-    // Per-segment colored rectangles. Color position follows the formula from
-    // drawLiquidRing (Swift line 703): palette position driven by vertical
-    // coordinate, animation phase, ambient sinusoidal motion, and ripple offset.
+  // Colored light spills into the room from the same contact point and palette
+  // as the pane. It grows softly and fades as the resonance settles.
+  renderLight(ctx, chord, globalPhase, crossfade = 1, prevChord = null, reducedMotion = false) {
+    const phase = reducedMotion ? 0 : globalPhase;
+    const position = this.baseOffset * 0.68 + phase * 0.11 + this.lastStrikeNorm * 1.18;
+    const color = this.materialColorAt(chord, position, this.lastStrikeNorm, crossfade, prevChord, reducedMotion).map(Math.round).join(',');
+    const center = this.worldPoint(this.x, this.top + this.height * this.lastStrikeNorm, reducedMotion);
+    const spread = reducedMotion ? 1 : 0.68 + (1 - Math.exp(-this.strikeAge * 1.8)) * 0.6;
+    const radius = Math.max(90, Math.min(330, this.height * 0.62)) * spread;
+    const alpha = 0.014 + this.lightEnergy * 0.13;
     ctx.save();
-    clipToRoundedStrand();
-    for (let i = 0; i < N; i++) {
-      const t = i / (N - 1);
-      const y = top + t * height;
-      const r = ripple[i], g = grad[i];
-
-      // Ambient sinusoidal motion — same formula as Swift lines 693–694
-      const ambient = Math.sin(t * 3 + globalPhase * 4)  * 0.22
-                    + Math.sin(t * 5 - globalPhase * 2.5) * 0.12;
-
-      // Ripple-driven hue offset — mirrors Swift line 702
-      const rippleOffset = g * 2.15 + r * 1.35;
-
-      const pos = t * colCount + baseOffset + globalPhase * 0.3 + ambient * 0.5 + rippleOffset;
-      const [cr, cg, cb] = blendColors(pos);
-
-      // Width swells with wave amplitude — the "liquid metal" bulge effect
-      const w = baseWidth + (r < 0 ? -r : r) * RIPPLE_SWELL_SCALE;
-      ctx.fillStyle = `rgba(${cr * 255 | 0},${cg * 255 | 0},${cb * 255 | 0},0.94)`;
-      ctx.fillRect(x - w * 0.5, y, w, segH);
-    }
-    ctx.restore();
-
-    // ── Pass 3: Depth shading ──────────────────────────────────────────────
-    // Soft white in troughs; brightened color on crests. Mirrors drawRippleDepth.
-    ctx.save();
-    clipToRoundedStrand();
-    for (let i = 0; i < N; i++) {
-      const midR   = ripple[i];
-      const innerR = a[Math.max(0,     midJ - 1) * N + i];
-      const outerR = a[Math.min(D - 1, midJ + 1) * N + i];
-      const radialSlope  = outerR - innerR;
-      const angularSlope = grad[i];
-
-      // Trough (shadow): negative amplitude + inward radial slope → white overlay
-      const trough = -midR * 0.7 - radialSlope * 0.45;
-      if (trough > 0.01) {
-        const alpha = trough * 0.16 < 0.06 ? trough * 0.16 : 0.06;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fillRect(x - baseWidth * 0.5, top + (i / (N - 1)) * height, baseWidth, segH);
-      }
-
-      // Crest: positive amplitude + steep gradient → brightened color stripe
-      const crest = midR * 0.42 + (angularSlope < 0 ? -angularSlope : angularSlope) * 0.95
-                    + radialSlope * 0.25 - 0.055;
-      if (crest > 0.01) {
-        const t2 = i / (N - 1);
-        const shimmer = Math.sin(t2 * 9 * Math.PI - globalPhase * 7) * 0.18;
-        const pos = t2 * colCount + baseOffset + globalPhase * 0.42 + radialSlope * 3 + shimmer;
-        const [cr, cg, cb] = blendColors(pos);
-        const amount = crest * 0.72 < 0.24 ? crest * 0.72 : 0.24;
-        const rb = cr + (1 - cr) * amount;
-        const gb = cg + (1 - cg) * amount;
-        const bb = cb + (1 - cb) * amount;
-        const alpha = crest * 0.7 < 0.22 ? crest * 0.7 : 0.22;
-        const lineW = 0.7 + (crest * 3.8 < 1.45 ? crest * 3.8 : 1.45);
-        ctx.fillStyle = `rgba(${rb * 255 | 0},${gb * 255 | 0},${bb * 255 | 0},${alpha})`;
-        ctx.fillRect(x - lineW * 0.5 + midR * 2.4, top + t2 * height, lineW, segH);
-      }
-    }
-    ctx.restore();
-
-    // ── Pass 4: Crest sheens ───────────────────────────────────────────────
-    // Soft horizontal reflections at wave peaks. These keep the tactile
-    // "played" texture without turning the strand into vertical white lines.
-    ctx.save();
-    clipToRoundedStrand();
     ctx.globalCompositeOperation = 'screen';
-    for (let i = 0; i < N; i++) {
-      const h = ripple[i];
-      const gradient = grad[i] < 0 ? -grad[i] : grad[i];
-      const sheen = h * 0.5 + gradient * 0.72 - RIPPLE_SHEEN_THRESHOLD;
-      if (sheen <= 0) continue;
+    ctx.translate(center.x, center.y);
+    ctx.scale(1.4, 0.85);
+    const light = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+    light.addColorStop(0, `rgba(${color},${alpha})`);
+    light.addColorStop(0.28, `rgba(${color},${alpha * 0.56})`);
+    light.addColorStop(1, `rgba(${color},0)`);
+    ctx.fillStyle = light;
+    ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+    ctx.restore();
+  }
 
-      const t3 = i / (N - 1);
-      const y = top + t3 * height;
-      const shimmer = Math.sin(t3 * 18 + globalPhase * 9 + baseOffset) * 0.5 + 0.5;
-      const width = baseWidth * (0.26 + Math.min(RIPPLE_SHEEN_WIDTH, sheen * 4.8));
-      const heightPx = 0.7 + Math.min(1.25, sheen * 5.2);
-      const offset = (shimmer - 0.5) * baseWidth * 0.34 + h * 2.2;
-      const left = x + offset - width * 0.5;
-      const alpha = Math.min(RIPPLE_SHEEN_ALPHA, sheen * 0.55);
-      const glow = ctx.createLinearGradient(left, 0, left + width, 0);
-      glow.addColorStop(0, 'rgba(255,255,255,0)');
-      glow.addColorStop(0.28, `rgba(255,255,255,${alpha * 0.32})`);
-      glow.addColorStop(0.52, `rgba(255,255,255,${alpha})`);
-      glow.addColorStop(0.78, `rgba(210,255,255,${alpha * 0.28})`);
-      glow.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = glow;
-      roundedRectPath(ctx, left, y - heightPx * 0.5, width, heightPx, heightPx * 0.5);
-      ctx.fill();
+  // The pane's material and ripple move together. Contacts use this same pose.
+  render(ctx, chord, globalPhase, crossfade = 1, prevChord = null, reducedMotion = false) {
+    const { x, top, height, drawWidth: width, strikeGlow } = this;
+    const left = x - width / 2;
+    const radius = Math.min(4, width * 0.18);
+    const phase = reducedMotion ? 0 : globalPhase;
+    const colorAt = (position, yNorm) => this.materialColorAt(chord, position, yNorm, crossfade, prevChord, reducedMotion);
+    const offset = this.baseOffset * 0.68 + phase * 0.11;
+    const primary = colorAt(offset + this.lastStrikeNorm * 1.18, this.lastStrikeNorm);
+    const rgb = color => color.map(value => Math.round(value)).join(',');
+    const glassPath = () => roundedRectPath(ctx, left, top, width, height, radius);
+
+    ctx.save();
+    const { angle, pivotX, pivotY } = this.pose(reducedMotion);
+    ctx.translate(pivotX, pivotY);
+    ctx.rotate(angle);
+    ctx.translate(-pivotX, -pivotY);
+
+    // A restrained colored halo makes the glass legible without a neon bloom.
+    ctx.shadowColor = `rgba(${rgb(primary)},${0.12 + strikeGlow * 0.25})`;
+    ctx.shadowBlur = 16 + strikeGlow * 18;
+    ctx.fillStyle = `rgba(${rgb(primary)},0.085)`;
+    glassPath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // One gradual spectral shift along each pane, rather than repeated stripes.
+    const tint = ctx.createLinearGradient(0, top, 0, top + height);
+    for (let i = 0; i <= 32; i++) {
+      const t = i / 32;
+      const color = colorAt(offset + t * 1.18, t);
+      tint.addColorStop(t, `rgba(${rgb(color)},${0.78 + strikeGlow * 0.15})`);
     }
+    ctx.fillStyle = tint;
+    glassPath();
+    ctx.fill();
+    ctx.save();
+    glassPath();
+    ctx.clip();
+
+    // Consistent light from the upper left reveals the beveled cross section.
+    const face = ctx.createLinearGradient(left, 0, left + width, 0);
+    face.addColorStop(0, 'rgba(228,247,247,0.18)');
+    face.addColorStop(0.09, 'rgba(217,242,241,0.08)');
+    face.addColorStop(0.22, 'rgba(10,25,36,0.12)');
+    face.addColorStop(0.56, 'rgba(14,29,42,0.10)');
+    face.addColorStop(0.82, 'rgba(230,240,255,0.11)');
+    face.addColorStop(0.95, 'rgba(222,236,250,0.13)');
+    face.addColorStop(1, 'rgba(11,23,37,0.20)');
+    ctx.fillStyle = face;
+    ctx.fillRect(left, top, width, height);
+
+    const reflection = ctx.createLinearGradient(left, top, left + width, top + height);
+    reflection.addColorStop(0, 'rgba(242,252,252,0.10)');
+    reflection.addColorStop(0.18, 'rgba(242,252,252,0.01)');
+    reflection.addColorStop(0.43, 'rgba(242,252,252,0.025)');
+    reflection.addColorStop(0.49, 'rgba(242,252,252,0.08)');
+    reflection.addColorStop(0.52, 'rgba(242,252,252,0.01)');
+    reflection.addColorStop(1, 'rgba(242,252,252,0.07)');
+    ctx.fillStyle = reflection;
+    ctx.fillRect(left, top, width, height);
+
+    // Refracted light travels with the existing ripple, without changing sound
+    // or note reload timing. Reduced motion keeps only the quiet face highlight.
+    if (!reducedMotion) {
+      const N = this.vSamples;
+      const middle = (this.dBands >> 1) * N;
+      const segmentHeight = height / (N - 1) + 0.1;
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 1; i < N - 1; i++) {
+        const ripple = this._bufA[middle + i];
+        const gradient = this._bufA[middle + i + 1] - this._bufA[middle + i - 1];
+        const energy = Math.abs(ripple) * 1.1 + Math.abs(gradient) * 1.8;
+        if (energy < 0.018) continue;
+        const t = i / (N - 1);
+        const color = colorAt(offset + t * 1.18 + ripple * 0.65, t);
+        ctx.fillStyle = `rgba(${rgb(color)},${Math.min(0.62, energy * 0.8)})`;
+        ctx.fillRect(left + 1, top + t * height, width - 2, segmentHeight);
+        ctx.fillStyle = `rgba(235,251,252,${Math.min(0.55, energy * 0.9)})`;
+        ctx.fillRect(left + 1.8 + ripple * 1.5, top + t * height, 1.1, segmentHeight);
+      }
+    }
+    ctx.restore();
+
+    // The edge and end rims hold their shape as the light settles.
+    const rim = ctx.createLinearGradient(0, top, 0, top + height);
+    rim.addColorStop(0, 'rgba(226,247,249,0.58)');
+    rim.addColorStop(0.4, 'rgba(221,242,246,0.17)');
+    rim.addColorStop(1, 'rgba(211,229,247,0.38)');
+    ctx.strokeStyle = rim;
+    ctx.lineWidth = 0.75;
+    glassPath();
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(226,243,247,0.13)';
+    ctx.lineWidth = 0.6;
+    roundedRectPath(ctx, left + 2.5, top + 4, width - 5, height - 8, 2);
+    ctx.stroke();
+
+    const end = ctx.createLinearGradient(left, 0, left + width, 0);
+    end.addColorStop(0, 'rgba(239,251,252,0.08)');
+    end.addColorStop(0.35, 'rgba(239,251,252,0.55)');
+    end.addColorStop(1, 'rgba(213,232,248,0.10)');
+    ctx.fillStyle = end;
+    roundedRectPath(ctx, left + 1.5, top + height - 3, width - 3, 1.5, 0.75);
+    ctx.fill();
     ctx.restore();
   }
 
