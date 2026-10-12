@@ -36,6 +36,11 @@ test('the built homepage versions its cloth and project preview assets', async (
     assert.equal(starTriggers.length, 1, 'Starfield should also have its own preview trigger');
     assert.match(starTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/starfield\/"/, 'Starfield must retain direct project navigation');
     assert.ok(files.some(file => /^starfield-preview-renderer\.[\w-]+\.js$/.test(file)), 'The starfield preview must be deployed as a versioned lazy renderer');
+    const trebuchetTriggers = [...html.matchAll(/<a\b[^>]*\bdata-trebuchet-preview-trigger\b[^>]*>/g)];
+    assert.equal(trebuchetTriggers.length, 1, 'Trebuchet needs its own preview trigger');
+    assert.match(trebuchetTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/trebuchet\/"/, 'Trebuchet must retain direct project navigation');
+    assert.match(html, /data-trebuchet-preview[^>]*aria-hidden="true"/, 'The decorative trebuchet stays out of the accessibility tree');
+    assert.ok(files.some(file => /^trebuchet-preview-renderer\.[\w-]+\.js$/.test(file)), 'The trebuchet renderer must have a build-generated versioned URL');
     const jellyTriggers = [...html.matchAll(/<a\b[^>]*\bdata-jellyfish-preview-trigger\b[^>]*>/g)];
     assert.equal(jellyTriggers.length, 1, 'Jellyfish needs its own preview trigger');
     assert.match(jellyTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/pretext\/"/, 'Jellyfish must retain direct project navigation');

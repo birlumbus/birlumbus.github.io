@@ -28,6 +28,8 @@ which gives changed JavaScript a new asset URL on deployment. The older
 
 Trebuchet is maintained separately in `birlumbus/trebuchet`. Its generated files live in `public/trebuchet/`; `build.json` identifies the source revision. To update it, run `npm run export:portfolio -- /path/to/this/checkout` from the Trebuchet repository, then build and publish this site as usual.
 
+After exporting Trebuchet, run `node scripts/sync-trebuchet-preview.mjs /path/to/trebuchet` from this repository to update the homepage rig and crew artwork from that same source revision.
+
 World Generator lives in `public/world-generator/`. It runs the packaged Python
 engine in the browser through Pyodide, with no backend. Its `manifest.json`
 records the engine source digest and pinned browser runtime. To update it, build

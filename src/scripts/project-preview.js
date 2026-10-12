@@ -14,6 +14,12 @@ const previews = [
     load: canvas => import('./starfield-preview-renderer.js').then(module => module.createStarfieldPreview(canvas)),
   },
   {
+    name: 'Trebuchet',
+    trigger: document.querySelector('[data-trebuchet-preview-trigger]'),
+    element: document.querySelector('[data-trebuchet-preview]'),
+    load: canvas => import('./trebuchet-preview-renderer.js').then(module => module.createTrebuchetPreview(canvas)),
+  },
+  {
     name: 'Jellyfish',
     trigger: document.querySelector('[data-jellyfish-preview-trigger]'),
     element: document.querySelector('[data-jellyfish-preview]'),
