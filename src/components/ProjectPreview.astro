@@ -1,11 +1,14 @@
-<div class="world-preview" data-world-preview aria-hidden="true">
+<div class="project-preview" data-world-preview aria-hidden="true">
+  <canvas width="520" height="520"></canvas>
+</div>
+<div class="project-preview" data-starfield-preview aria-hidden="true">
   <canvas width="520" height="520"></canvas>
 </div>
 
-<script src="../scripts/world-preview.js"></script>
+<script src="../scripts/project-preview.js"></script>
 
 <style>
-  .world-preview {
+  .project-preview {
     position: absolute;
     left: 50%;
     bottom: calc(100% + 26px);
@@ -17,12 +20,13 @@
     visibility: hidden;
     transition: opacity 160ms ease-out, transform 220ms ease-out, visibility 0s linear 220ms;
   }
-  .world-preview.is-visible {
+  .project-preview.is-visible {
     opacity: 1;
     visibility: visible;
     transform: translate(-50%, 0);
     transition: opacity 160ms ease-out, transform 220ms ease-out;
   }
+  .project-preview.is-replaced { opacity: 0; visibility: hidden; transition: none; }
   canvas { display: block; width: 100%; height: 100%; }
-  @media (prefers-reduced-motion: reduce) { .world-preview, .world-preview.is-visible { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .project-preview, .project-preview.is-visible { transition: none; } }
 </style>

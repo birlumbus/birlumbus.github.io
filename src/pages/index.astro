@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import WorldPreview from '../components/WorldPreview.astro';
+import ProjectPreview from '../components/ProjectPreview.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ClothBackground from '../components/ClothBackground.astro';
 
@@ -21,7 +21,7 @@ const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length)
   <ClothBackground />
   <main class="site-shell site-main home-main home-links">
     <div class="project-navigation">
-      <WorldPreview />
+      <ProjectPreview />
       <nav class="project-links" aria-label="Projects">
         {rows.map(row => (
           <div class="project-links-row">
@@ -30,6 +30,7 @@ const rows = [projects.slice(0, 3), projects.slice(3)].filter(row => row.length)
                 class="project-link"
                 href={project.data.links.live ?? project.data.links.repo}
                 data-world-preview-trigger={project.id === 'world-generator' ? '' : undefined}
+                data-starfield-preview-trigger={project.id === 'starfield' ? '' : undefined}
               >{project.data.title}</a>
             ))}
           </div>

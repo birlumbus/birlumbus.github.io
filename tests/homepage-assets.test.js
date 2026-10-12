@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
-test('the built homepage versions its cloth, globe renderer, and terrain assets', async () => {
+test('the built homepage versions its cloth and project preview assets', async () => {
   const output = await mkdtemp(join(tmpdir(), 'portfolio-assets-'));
   try {
     execFileSync(process.execPath, [
@@ -15,7 +15,7 @@ test('the built homepage versions its cloth, globe renderer, and terrain assets'
     ], { cwd: fileURLToPath(new URL('../', import.meta.url)), stdio: 'pipe' });
     const html = await readFile(join(output, 'index.html'), 'utf8');
     const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(match => match[1]);
-    assert.equal(scripts.length, 2, 'The homepage should initialize its cloth and globe preview');
+    assert.equal(scripts.length, 2, 'The homepage should initialize its cloth and project previews');
     for (const script of scripts) {
       assert.match(script, /^\/_astro\/.+\.[\w-]+\.js$/, 'Homepage code must use build-generated versioned URLs');
       const asset = join(output, script.slice(1));
@@ -30,8 +30,12 @@ test('the built homepage versions its cloth, globe renderer, and terrain assets'
     const bundles = await Promise.all(files.filter(file => file.endsWith('.js')).map(file => readFile(join(output, '_astro', file), 'utf8')));
     assert.ok(bundles.some(bundle => bundle.includes(terrain)), 'The globe renderer must reference the deployed terrain');
     const triggers = [...html.matchAll(/<a\b[^>]*\bdata-world-preview-trigger\b[^>]*>/g)];
-    assert.equal(triggers.length, 1, 'Only world generator should trigger a preview');
+    assert.equal(triggers.length, 1, 'Only world generator should trigger a globe preview');
     assert.match(triggers[0][0], /href="https:\/\/birlumbus\.github\.io\/world-generator\/"/, 'The preview link must retain direct project navigation');
+    const starTriggers = [...html.matchAll(/<a\b[^>]*\bdata-starfield-preview-trigger\b[^>]*>/g)];
+    assert.equal(starTriggers.length, 1, 'Starfield should also have its own preview trigger');
+    assert.match(starTriggers[0][0], /href="https:\/\/birlumbus\.github\.io\/starfield\/"/, 'Starfield must retain direct project navigation');
+    assert.ok(files.some(file => /^starfield-preview-renderer\.[\w-]+\.js$/.test(file)), 'The starfield preview must be deployed as a versioned lazy renderer');
   } finally {
     await rm(output, { recursive: true, force: true });
   }
