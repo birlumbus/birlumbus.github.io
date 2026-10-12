@@ -5,36 +5,56 @@ const STARFIELD_ASPECT_BUCKET = 0.04;
 const STARFIELD_SMALL_VIEWPORT_PX = 720;
 const STARFIELD_SMALL_AREA_PX = 700_000;
 const STARFIELD_HORIZONTAL_FOV_DEG = 96;
+const STARFIELD_PORTRAIT_VERTICAL_FOV_DEG = 80;
 const STARFIELD_MAX_YAW_DEG = 9;
-const STARFIELD_MAX_PITCH_DEG = 4.5;
+const STARFIELD_MAX_PITCH_DEG = 7;
 const STARFIELD_CAMERA_EASE = 0.1;
 const STARFIELD_CAMERA_EPSILON = 0.0003;
+const STARFIELD_CAMERA_DEPTH_STEPS = 32;
+const STARFIELD_FAR_CAMERA_RATE = 0.4;
+const STARFIELD_NEAR_CAMERA_RATE = 1.1;
 const STARFIELD_POINT_SIZE = 1.35;
-const STARFIELD_MAX_POINT_SIZE = 1.55;
+const STARFIELD_MAX_POINT_SIZE = 2;
+const STARFIELD_PARALLAX_PX = 12;
+const STARFIELD_PARALLAX_REFERENCE_DEPTH = 4.8;
 const STARFIELD_EDGE_MARGIN_PX = 8;
 const STARFIELD_INTRO_DURATION_MS = 1600;
 const STARFIELD_INTRO_STAGGER_MS = 560;
 const STARFIELD_INTRO_FADE_START = 0.34;
 const STARFIELD_INTRO_FADE_END = 0.72;
-const STARFIELD_INTRO_DEPTH_SCALE_MIN = 0.018;
-const STARFIELD_INTRO_DEPTH_SCALE_MAX = 0.08;
 const STARFIELD_INTRO_ORIGIN_JITTER = 0.035;
 const STARFIELD_INTRO_POINT_SIZE = 0.28;
 const STARFIELD_INTRO_GLOW_MAX = 0.18;
-const STARFIELD_PROMPT_REVEAL_DELAY_MS = 120;
-const STARFIELD_ENTRY_FADE_CLEANUP_MS = 340;
-const STARFIELD_CLUSTER_RATIO = 0;
-const STARFIELD_CLUSTER_SPREAD_MIN = 0.065;
-const STARFIELD_CLUSTER_SPREAD_MAX = 0.16;
-const STARFIELD_CLUSTER_MAJOR_AXIS_MIN = 0.95;
-const STARFIELD_CLUSTER_MAJOR_AXIS_MAX = 1.85;
-const STARFIELD_CLUSTER_MINOR_AXIS_MIN = 0.16;
-const STARFIELD_CLUSTER_MINOR_AXIS_MAX = 0.42;
-const STARFIELD_CLUSTER_BEND_MAX = 0.24;
+const STARFIELD_CLUSTER_RATIO = 0.075;
+const STARFIELD_CLUSTER_SPREAD_MIN = 0.2;
+const STARFIELD_CLUSTER_SPREAD_MAX = 0.32;
+const STARFIELD_CLUSTER_MAJOR_AXIS_MIN = 1.1;
+const STARFIELD_CLUSTER_MAJOR_AXIS_MAX = 1.5;
+const STARFIELD_CLUSTER_MINOR_AXIS_MIN = 0.65;
+const STARFIELD_CLUSTER_MINOR_AXIS_MAX = 0.95;
+const STARFIELD_CLUSTER_BEND_MAX = 0.08;
 const STARFIELD_VOID_COUNT = 7;
 const STARFIELD_VOID_RADIUS_MIN = 0.1;
 const STARFIELD_VOID_RADIUS_MAX = 0.22;
-const STARFIELD_VOID_STRENGTH = 0.34;
+const STARFIELD_VOID_STRENGTH = 0.48;
+const STARFIELD_SAMPLING_DEPTH = 6;
+const STARFIELD_DEPTH_NEAR_REFERENCE = 5.5;
+const STARFIELD_DEPTH_FAR_REFERENCE = 96;
+
+const STARFIELD_DEPTH_BANDS = [
+  {
+    share: 0.77, distance: 58,
+    opacityMin: 0.32, opacityMax: 0.88
+  },
+  {
+    share: 0.22, distance: 48,
+    opacityMin: 0.32, opacityMax: 0.88
+  },
+  {
+    share: 0.01, distance: 38,
+    opacityMin: 0.45, opacityMax: 0.88
+  }
+];
 
 const STARFIELD_TONES = [
   {rgb: "250, 252, 255", weight: 0.74},
@@ -45,9 +65,9 @@ const STARFIELD_TONES = [
 const state = {
   shell: document.querySelector(".starfield-shell"),
   host: document.querySelector("#starfield"),
-  trigger: document.querySelector("[data-starfield-enter]"),
   canvas: null,
   ctx: null,
+  haloSprite: null,
   stars: [],
   viewportRect: null,
   metrics: null,
@@ -56,9 +76,8 @@ const state = {
   resizeFrame: null,
   cameraFrame: null,
   pointerFrame: null,
-  stopFlightRevealTimer: null,
-  stopFlightCleanupTimer: null,
-  pendingPointer: {x: 0, y: 0},
+  pendingPointer: null,
+  pointerOrigin: null,
   camera: {
     yaw: 0,
     pitch: 0,
@@ -71,9 +90,7 @@ const state = {
     startedAt: 0,
     duration: STARFIELD_INTRO_DURATION_MS
   },
-  pendingReveal: false,
   isReady: false,
-  isStoppingFlight: false,
   isRevealed: false,
   totalStars: 0
 };
@@ -84,21 +101,16 @@ function initializeStarfield() {
   if (!state.host || !state.shell) return;
 
   syncStarfieldCanvas(state.host);
+  state.haloSprite ??= createStarfieldHaloSprite();
   scheduleStarfieldRender({force: true});
 
-  state.trigger?.addEventListener("click", requestStarfieldReveal);
-  state.trigger?.addEventListener("keydown", handleStarfieldEnterKey);
   window.addEventListener("pointermove", handleStarfieldPointerMove, {passive: true});
+  window.addEventListener("pointerdown", handleStarfieldPointerDown, {passive: true});
   window.addEventListener("resize", handleStarfieldResize, {passive: true});
 
   const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
   motionQuery?.addEventListener?.("change", () => {
     resetStarfieldCameraTargets();
-    if (prefersReducedStarfieldMotion() && state.isStoppingFlight) {
-      completeStarfieldReveal({skipIntro: true});
-      return;
-    }
-
     if (prefersReducedStarfieldMotion() && state.intro.isActive) {
       finishStarfieldIntro();
       return;
@@ -121,6 +133,21 @@ function syncStarfieldCanvas(host) {
 
   state.canvas = canvas;
   state.ctx = canvas.getContext("2d", {alpha: true});
+}
+
+function createStarfieldHaloSprite() {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 24;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const gradient = ctx.createRadialGradient(12, 12, 0, 12, 12, 12);
+  gradient.addColorStop(0, "rgba(235, 242, 255, 0.06)");
+  gradient.addColorStop(0.28, "rgba(235, 242, 255, 0.02)");
+  gradient.addColorStop(1, "rgba(235, 242, 255, 0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 24, 24);
+  return canvas;
 }
 
 function scheduleStarfieldRender({force = false} = {}) {
@@ -148,7 +175,8 @@ function renderStarfield({force = false} = {}) {
 
   if (planChanged) {
     state.stars = createStarSphere(metrics.totalStars, {
-      includeIntro: !state.isRevealed || state.intro.isActive
+      includeIntro: !state.isRevealed || state.intro.isActive,
+      metrics
     });
     state.totalStars = metrics.totalStars;
     state.planKey = metrics.planKey;
@@ -163,9 +191,7 @@ function renderStarfield({force = false} = {}) {
   state.isReady = true;
   state.shell?.classList.add("is-ready");
 
-  if (state.pendingReveal) {
-    beginStopFlightTransition();
-  }
+  revealStarfield();
 }
 
 function resizeStarfieldCanvas(metrics) {
@@ -213,12 +239,24 @@ function drawStarfieldFrame({introElapsed = null} = {}) {
   const centerX = width / 2;
   const centerY = height / 2;
   const margin = STARFIELD_EDGE_MARGIN_PX;
-  const pointSize = Math.min(STARFIELD_MAX_POINT_SIZE, STARFIELD_POINT_SIZE);
   const isIntroFrame = Number.isFinite(introElapsed);
   const camera = prefersReducedStarfieldMotion() || isIntroFrame
     ? {yaw: 0, pitch: 0}
     : state.camera;
   const basis = starfieldCameraBasis(camera.yaw, camera.pitch);
+  // Cache the distance-dependent view responses for the depth layers.
+  const depthBases = Array.from({length: STARFIELD_CAMERA_DEPTH_STEPS + 1}, (_, index) => {
+    const rate = mixNumber(STARFIELD_FAR_CAMERA_RATE, STARFIELD_NEAR_CAMERA_RATE,
+      index / STARFIELD_CAMERA_DEPTH_STEPS);
+    return starfieldCameraBasis(camera.yaw * rate, camera.pitch * rate);
+  });
+  // A small camera lean separates the depth bands. Rotation alone would leave
+  // stars along the same sightline at identical projected positions.
+  const parallaxPx = Math.min(STARFIELD_PARALLAX_PX, width * 0.012);
+  const leanScale = parallaxPx * STARFIELD_PARALLAX_REFERENCE_DEPTH / focalLength;
+  const leanGain = metrics.yawGain ?? degreesToRadians(STARFIELD_MAX_YAW_DEG);
+  const leanX = clampNumber(camera.yaw / leanGain, -1, 1) * leanScale;
+  const leanY = clampNumber(camera.pitch / leanGain, -1, 1) * leanScale;
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -230,9 +268,10 @@ function drawStarfieldFrame({introElapsed = null} = {}) {
     const star = state.stars[index];
     if (isIntroFrame && (!star.intro || introElapsed <= star.intro.delay)) continue;
 
-    const cameraX = dotStarVector(star, basis.right);
-    const cameraY = dotStarVector(star, basis.up);
-    const cameraZ = dotStarVector(star, basis.forward);
+    const starBasis = depthBases[star.cameraDepthIndex] ?? basis;
+    const cameraX = dotStarVector(star, starBasis.right) - leanX;
+    const cameraY = dotStarVector(star, starBasis.up) - leanY;
+    const cameraZ = dotStarVector(star, starBasis.forward);
 
     if (cameraZ <= 0.02) continue;
 
@@ -248,6 +287,7 @@ function drawStarfieldFrame({introElapsed = null} = {}) {
       continue;
     }
 
+    const pointSize = Math.min(STARFIELD_MAX_POINT_SIZE, star.pointSize ?? STARFIELD_POINT_SIZE);
     if (isIntroFrame) {
       const introStar = starfieldIntroStarFrame(
         star,
@@ -268,8 +308,7 @@ function drawStarfieldFrame({introElapsed = null} = {}) {
         activeColor = star.color;
       }
 
-      ctx.globalAlpha = introStar.opacity;
-      ctx.fillRect(introStar.x, introStar.y, introStar.pointSize, introStar.pointSize);
+      drawStarfieldPoint(ctx, star, introStar.x, introStar.y, introStar.pointSize, introStar.opacity);
       continue;
     }
 
@@ -278,11 +317,22 @@ function drawStarfieldFrame({introElapsed = null} = {}) {
       activeColor = star.color;
     }
 
-    ctx.globalAlpha = star.opacity;
-    ctx.fillRect(screenX, screenY, pointSize, pointSize);
+    drawStarfieldPoint(ctx, star, screenX, screenY, pointSize, star.opacity);
   }
 
   ctx.globalAlpha = 1;
+}
+
+function drawStarfieldPoint(ctx, star, x, y, pointSize, opacity) {
+  ctx.globalAlpha = opacity;
+  if (star.haloStrength > 0 && state.haloSprite) {
+    const haloSize = pointSize * 4;
+    const inset = (haloSize - pointSize) / 2;
+    ctx.globalAlpha = opacity * star.haloStrength;
+    ctx.drawImage(state.haloSprite, x - inset, y - inset, haloSize, haloSize);
+    ctx.globalAlpha = opacity;
+  }
+  ctx.fillRect(x, y, pointSize, pointSize);
 }
 
 function starfieldIntroStarFrame(
@@ -318,38 +368,58 @@ function starfieldIntroStarFrame(
   return {x, y, opacity, pointSize};
 }
 
-function createStarSphere(count, {includeIntro = true} = {}) {
+function createStarSphere(count, {includeIntro = true, metrics = null} = {}) {
   const safeCount = Math.max(0, Number.parseInt(count, 10) || 0);
-  const clusters = STARFIELD_CLUSTER_RATIO > 0 ? createStarClusters(safeCount) : [];
+  const clusters = STARFIELD_CLUSTER_RATIO > 0 ? createStarClusters() : [];
   const voids = createStarVoids();
 
   return Array.from({length: safeCount}, (_, index) => {
     const clustered = clusters.length > 0 && Math.random() < STARFIELD_CLUSTER_RATIO;
-    const vector = clustered
-      ? randomClusteredUnitVector(clusters[index % clusters.length])
-      : randomUnitVector();
-    const adjusted = pushOutOfVoids(vector, voids);
+    const adjusted = placeStarfieldDirection(clustered ? clusters[index % clusters.length] : null, voids, metrics);
+    const share = index / safeCount;
+    const bandIndex = share < STARFIELD_DEPTH_BANDS[0].share ? 0 :
+      share < STARFIELD_DEPTH_BANDS[0].share + STARFIELD_DEPTH_BANDS[1].share ? 1 : 2;
+    const band = STARFIELD_DEPTH_BANDS[bandIndex];
+    const depth = band.distance;
+    const closeness = starfieldDepthCloseness(depth);
     const toneIndex = randomStarToneIndex();
     const tone = STARFIELD_TONES[toneIndex];
 
     const star = {
-      x: adjusted.x,
-      y: adjusted.y,
-      z: adjusted.z,
-      opacity: randomRange(0.32, 0.88),
+      x: adjusted.x * depth,
+      y: adjusted.y * depth,
+      z: adjusted.z * depth,
+      bandIndex,
+      depth,
+      sizeVariation: randomRange(-0.1, 0.1),
+      opacity: randomRange(band.opacityMin, band.opacityMax),
       toneIndex,
       color: `rgb(${tone.rgb})`
     };
+    updateStarfieldDepthAppearance(star, closeness);
 
     if (includeIntro) {
-      star.intro = createStarIntro(index);
+      star.intro = createStarIntro(index, closeness);
     }
 
     return star;
-  }).sort((a, b) => a.toneIndex - b.toneIndex);
+  }).sort((a, b) => a.bandIndex - b.bandIndex || a.toneIndex - b.toneIndex);
 }
 
-function createStarIntro(index) {
+function starfieldDepthCloseness(depth) {
+  return smoothstep(0, 1, Math.log(STARFIELD_DEPTH_FAR_REFERENCE / depth) /
+    Math.log(STARFIELD_DEPTH_FAR_REFERENCE / STARFIELD_DEPTH_NEAR_REFERENCE));
+}
+
+function updateStarfieldDepthAppearance(star, closeness = starfieldDepthCloseness(star.depth)) {
+  // Equal distances share every depth cue. Keep each star's intrinsic variation
+  // separate so its layer label cannot imply a different distance.
+  star.cameraDepthIndex = Math.round(closeness * STARFIELD_CAMERA_DEPTH_STEPS);
+  star.pointSize = mixNumber(1.23, 1.61, closeness) + star.sizeVariation;
+  star.haloStrength = (1 - smoothstep(6, 12, star.depth)) * 0.6;
+}
+
+function createStarIntro(index, closeness = 0) {
   const sequenceIndex = index + 1;
   const delaySeed = halton(sequenceIndex, 2);
   const depthSeed = halton(sequenceIndex, 5);
@@ -361,22 +431,21 @@ function createStarIntro(index) {
   return {
     delay,
     duration: Math.max(1, STARFIELD_INTRO_DURATION_MS - delay),
-    depthScale: mixNumber(
-      STARFIELD_INTRO_DEPTH_SCALE_MIN,
-      STARFIELD_INTRO_DEPTH_SCALE_MAX,
-      depthSeed
-    ),
+    depthScale: mixNumber(0.26, 0.34, depthSeed) * mixNumber(1, 0.32, closeness),
     originX: (originSeedX - 0.5) * STARFIELD_INTRO_ORIGIN_JITTER,
     originY: (originSeedY - 0.5) * STARFIELD_INTRO_ORIGIN_JITTER,
     glow: glowSeed * STARFIELD_INTRO_GLOW_MAX
   };
 }
 
-function createStarClusters(totalStars) {
-  const count = Math.max(8, Math.min(24, Math.round(totalStars / 1100)));
-
-  return Array.from({length: count}, () => {
-    const center = randomUnitVector();
+function createStarClusters() {
+  const anchors = [
+    starfieldCameraBasis(-0.43, 0.22).forward,
+    starfieldCameraBasis(0.5, -0.24).forward
+  ];
+  return Array.from({length: 8}, (_, index) => {
+    const center = anchors[index] ?? randomUnitVector();
+    if (index >= anchors.length) center.z = -Math.abs(center.z);
     return {
       center,
       basis: tangentBasis(center),
@@ -391,10 +460,16 @@ function createStarClusters(totalStars) {
 }
 
 function createStarVoids() {
-  return Array.from({length: STARFIELD_VOID_COUNT}, () => ({
-    center: randomUnitVector(),
-    radius: randomRange(STARFIELD_VOID_RADIUS_MIN, STARFIELD_VOID_RADIUS_MAX)
-  }));
+  const anchors = [
+    starfieldCameraBasis(0.06, -0.06).forward,
+    starfieldCameraBasis(-0.65, -0.25).forward
+  ];
+  return Array.from({length: STARFIELD_VOID_COUNT}, (_, index) => {
+    const center = anchors[index] ?? randomUnitVector();
+    if (index >= anchors.length) center.z = -Math.abs(center.z);
+    const radius = randomRange(STARFIELD_VOID_RADIUS_MIN, STARFIELD_VOID_RADIUS_MAX);
+    return {center, radius, edgeDot: Math.cos(radius)};
+  });
 }
 
 function randomClusteredUnitVector(cluster) {
@@ -429,22 +504,33 @@ function randomClusteredUnitVector(cluster) {
   return normalizeVector({x, y, z});
 }
 
-function pushOutOfVoids(vector, voids) {
-  let adjusted = vector;
+function placeStarfieldDirection(cluster, voids, metrics) {
+  let vector;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    vector = cluster ? randomClusteredUnitVector(cluster) : randomStarfieldDirection(metrics);
+    let density = 1;
+    for (const voidArea of voids) {
+      if (dotStarVector(vector, voidArea.center) <= voidArea.edgeDot) continue;
+      const distance = angularDistance(vector, voidArea.center);
+      const falloff = smoothstep(0, 1, 1 - distance / voidArea.radius);
+      density *= 1 - STARFIELD_VOID_STRENGTH * falloff;
+    }
+    if (Math.random() <= density) break;
+  }
+  // Resampling makes soft gaps without pushing stars into a bright ring.
+  return vector;
+}
 
-  voids.forEach((voidArea) => {
-    const distance = angularDistance(adjusted, voidArea.center);
-    if (distance >= voidArea.radius) return;
+function randomStarfieldDirection(metrics) {
+  if (!metrics?.viewSampleRatio || Math.random() >= metrics.viewSampleRatio) return randomUnitVector();
 
-    const push = (voidArea.radius - distance) / voidArea.radius * STARFIELD_VOID_STRENGTH;
-    adjusted = normalizeVector({
-      x: adjusted.x - voidArea.center.x * push,
-      y: adjusted.y - voidArea.center.y * push,
-      z: adjusted.z - voidArea.center.z * push
-    });
+  // Portrait framing needs more of the existing stars in its visible region.
+  // Sample beyond every camera limit so looking around never exposes a seam.
+  return normalizeVector({
+    x: randomRange(-metrics.sampleHalfWidth, metrics.sampleHalfWidth) / metrics.focalLength,
+    y: randomRange(-metrics.sampleHalfHeight, metrics.sampleHalfHeight) / metrics.focalLength,
+    z: 1
   });
-
-  return adjusted;
 }
 
 function randomUnitVector() {
@@ -520,92 +606,21 @@ function dotStarVector(star, vector) {
   return star.x * vector.x + star.y * vector.y + star.z * vector.z;
 }
 
-function requestStarfieldReveal() {
-  if (state.isRevealed || state.isStoppingFlight) return;
-
-  if (!state.isReady) {
-    state.pendingReveal = true;
-    return;
-  }
-
-  beginStopFlightTransition();
-}
-
-function handleStarfieldEnterKey(event) {
-  if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") return;
-
-  event.preventDefault();
-  requestStarfieldReveal();
-}
-
-function beginStopFlightTransition() {
-  if (state.isRevealed || state.isStoppingFlight) return;
-
-  state.pendingReveal = false;
-
-  if (prefersReducedStarfieldMotion()) {
-    completeStarfieldReveal({skipIntro: true});
-    return;
-  }
-
-  state.isStoppingFlight = true;
-  state.trigger?.setAttribute("aria-disabled", "true");
-  state.shell?.classList.add("is-stopping-flight");
-  resetStarfieldCameraTargets();
-  startStarfieldIntro();
-
-  clearStopFlightTimers();
-  clearStopFlightCleanupTimer();
-  state.stopFlightRevealTimer = window.setTimeout(() => {
-    state.stopFlightRevealTimer = null;
-    completeStarfieldReveal();
-  }, STARFIELD_PROMPT_REVEAL_DELAY_MS);
-}
-
-function completeStarfieldReveal({skipIntro = false} = {}) {
+function revealStarfield() {
   if (state.isRevealed) return;
 
-  clearStopFlightTimers();
-  state.pendingReveal = false;
-  state.isStoppingFlight = false;
   state.isRevealed = true;
-  state.trigger?.setAttribute("tabindex", "-1");
   resetStarfieldCameraTargets();
+  state.shell?.classList.add("is-revealed");
 
-  if (skipIntro || prefersReducedStarfieldMotion()) {
+  if (prefersReducedStarfieldMotion()) {
     stopStarfieldIntro();
     drawStarfieldCamera();
     releaseStarfieldIntroMetadata();
-    state.shell?.classList.add("is-revealed");
-    scheduleStopFlightCleanup();
     return;
   }
 
-  state.shell?.classList.add("is-revealed");
-  scheduleStopFlightCleanup();
-}
-
-function clearStopFlightTimers() {
-  if (state.stopFlightRevealTimer) {
-    window.clearTimeout(state.stopFlightRevealTimer);
-    state.stopFlightRevealTimer = null;
-  }
-}
-
-function scheduleStopFlightCleanup() {
-  clearStopFlightCleanupTimer();
-  state.stopFlightCleanupTimer = window.setTimeout(() => {
-    state.stopFlightCleanupTimer = null;
-    state.shell?.classList.remove("is-stopping-flight");
-    state.trigger?.removeAttribute("aria-disabled");
-  }, STARFIELD_ENTRY_FADE_CLEANUP_MS);
-}
-
-function clearStopFlightCleanupTimer() {
-  if (!state.stopFlightCleanupTimer) return;
-
-  window.clearTimeout(state.stopFlightCleanupTimer);
-  state.stopFlightCleanupTimer = null;
+  startStarfieldIntro();
 }
 
 function startStarfieldIntro() {
@@ -637,6 +652,7 @@ function stepStarfieldIntro(timestamp) {
 
 function finishStarfieldIntro() {
   stopStarfieldIntro();
+  setStarfieldPointerOrigin();
   drawStarfieldCamera();
   releaseStarfieldIntroMetadata();
 }
@@ -650,21 +666,32 @@ function stopStarfieldIntro() {
   state.intro.isActive = false;
 }
 
-function handleStarfieldPointerMove(event) {
-  if (
-    !state.host?.isConnected ||
-    !state.isRevealed ||
-    state.intro.isActive ||
-    prefersReducedStarfieldMotion()
-  ) {
-    return;
-  }
+function setStarfieldPointerOrigin(pointer = state.pendingPointer) {
+  state.pointerOrigin = pointer ? {
+    x: pointer.x,
+    y: pointer.y,
+    yaw: state.camera.yaw,
+    pitch: state.camera.pitch
+  } : null;
+}
 
-  state.pendingPointer = normalizeStarfieldPointer(
-    event.clientX,
-    event.clientY,
-    starfieldViewportRect()
-  );
+function handleStarfieldPointerDown(event) {
+  if (!state.host?.isConnected || (event.pointerType !== "touch" && event.pointerType !== "pen")) return;
+
+  state.pendingPointer = {x: event.clientX, y: event.clientY};
+  setStarfieldPointerOrigin();
+  state.camera.targetYaw = state.camera.yaw;
+  state.camera.targetPitch = state.camera.pitch;
+}
+
+function handleStarfieldPointerMove(event) {
+  if (!state.host?.isConnected) return;
+
+  state.pendingPointer = {x: event.clientX, y: event.clientY};
+
+  // Keep tracking through arrival so looking around starts from the cursor's
+  // current position instead of catching up to its distance from screen center.
+  if (!state.isRevealed || state.intro.isActive || prefersReducedStarfieldMotion()) return;
 
   if (state.pointerFrame) return;
   state.pointerFrame = requestAnimationFrame(() => {
@@ -681,8 +708,22 @@ function applyStarfieldPointer(pointer = {x: 0, y: 0}) {
     return;
   }
 
-  state.camera.targetYaw = pointer.x * degreesToRadians(STARFIELD_MAX_YAW_DEG);
-  state.camera.targetPitch = -pointer.y * degreesToRadians(STARFIELD_MAX_PITCH_DEG);
+  if (!state.pointerOrigin) {
+    setStarfieldPointerOrigin(pointer);
+    return;
+  }
+
+  const rect = starfieldViewportRect();
+  const current = normalizeStarfieldPointer(pointer.x, pointer.y, rect);
+  const origin = normalizeStarfieldPointer(state.pointerOrigin.x, state.pointerOrigin.y, rect);
+  const yawLimit = degreesToRadians(STARFIELD_MAX_YAW_DEG);
+  const pitchLimit = degreesToRadians(STARFIELD_MAX_PITCH_DEG);
+  const {yawGain, pitchGain} = starfieldFraming(rect.width, rect.height);
+
+  state.camera.targetYaw = clampNumber(state.pointerOrigin.yaw + (current.x - origin.x) * yawGain,
+    -yawLimit, yawLimit);
+  state.camera.targetPitch = clampNumber(state.pointerOrigin.pitch + (origin.y - current.y) * pitchGain,
+    -pitchLimit, pitchLimit);
   startStarfieldCameraLoop();
 }
 
@@ -720,6 +761,7 @@ function resetStarfieldCameraTargets() {
   state.camera.targetPitch = 0;
   state.camera.yaw = 0;
   state.camera.pitch = 0;
+  setStarfieldPointerOrigin();
 
   if (state.cameraFrame) {
     window.cancelAnimationFrame(state.cameraFrame);
@@ -736,11 +778,6 @@ function releaseStarfieldIntroMetadata() {
 function handleStarfieldVisibilityChange() {
   if (!document.hidden) return;
 
-  if (state.isStoppingFlight) {
-    completeStarfieldReveal({skipIntro: true});
-    return;
-  }
-
   if (state.intro.isActive) {
     finishStarfieldIntro();
     return;
@@ -754,6 +791,12 @@ function handleStarfieldVisibilityChange() {
 
 function handleStarfieldResize() {
   if (!state.host?.isConnected || state.resizeFrame) return;
+
+  // A new framing changes input sensitivity. Continue from the current pose
+  // rather than recalculating a previous drag with that new sensitivity.
+  setStarfieldPointerOrigin();
+  state.camera.targetYaw = state.camera.yaw;
+  state.camera.targetPitch = state.camera.pitch;
 
   state.resizeFrame = requestAnimationFrame(() => {
     state.resizeFrame = null;
@@ -769,7 +812,8 @@ function starfieldMetrics(rect) {
   const bucketHeight = bucketStarfieldDimension(height);
   const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, STARFIELD_MAX_DEVICE_PIXEL_RATIO));
   const totalStars = starfieldTargetStarCount(bucketWidth, bucketHeight);
-  const focalLength = width / (2 * Math.tan(degreesToRadians(STARFIELD_HORIZONTAL_FOV_DEG) / 2));
+  const framing = starfieldFraming(width, height);
+  const sampling = starfieldViewSampling(width, height, framing.focalLength);
   const planKey = [
     bucketWidth,
     bucketHeight,
@@ -785,9 +829,83 @@ function starfieldMetrics(rect) {
     bucketHeight,
     dpr,
     totalStars,
-    focalLength,
+    ...framing,
+    ...sampling,
     planKey
   };
+}
+
+function starfieldFraming(width, height) {
+  const baseFocalLength = width / (2 * Math.tan(degreesToRadians(STARFIELD_HORIZONTAL_FOV_DEG) / 2));
+  const portraitMix = smoothstep(1, 1.65, height / width);
+  const portraitFocalLength = height / (2 * Math.tan(degreesToRadians(STARFIELD_PORTRAIT_VERTICAL_FOV_DEG) / 2));
+  const focalLength = mixNumber(baseFocalLength, Math.max(baseFocalLength, portraitFocalLength), portraitMix);
+  const motionScale = baseFocalLength / focalLength;
+  const yawGain = degreesToRadians(STARFIELD_MAX_YAW_DEG) * motionScale;
+  // Pointer coordinates are normalized independently by width and height.
+  // Compensate for aspect so the same pixel movement produces the same look.
+  const pitchGain = yawGain * height / width;
+
+  return {focalLength, yawGain, pitchGain};
+}
+
+function starfieldViewSampling(width, height, focalLength) {
+  const baseFocalLength = width / (2 * Math.tan(degreesToRadians(STARFIELD_HORIZONTAL_FOV_DEG) / 2));
+  const {sampleHalfWidth, sampleHalfHeight} = starfieldSamplingBounds(width, height, focalLength);
+  const sphereVisibleFraction = focal => Math.asin(
+    Math.sin(Math.atan(width / (2 * focal))) * Math.sin(Math.atan(height / (2 * focal)))
+  ) / Math.PI;
+  const baseVisibleFraction = sphereVisibleFraction(baseFocalLength);
+  const visibleFraction = sphereVisibleFraction(focalLength);
+  const sampleVisibleFraction = width * height / (4 * sampleHalfWidth * sampleHalfHeight);
+  // Keep the visible population close to the old lens without allocating more
+  // stars. The remaining spherical population preserves soft depth and gaps.
+  const viewSampleRatio = focalLength === baseFocalLength ? 0 : clampNumber(
+    (baseVisibleFraction - visibleFraction) / (sampleVisibleFraction - visibleFraction), 0, 0.8
+  );
+
+  return {sampleHalfWidth, sampleHalfHeight, viewSampleRatio};
+}
+
+function starfieldSamplingBounds(width, height, focalLength) {
+  const halfWidth = (width / 2 + STARFIELD_EDGE_MARGIN_PX) / focalLength;
+  const halfHeight = (height / 2 + STARFIELD_EDGE_MARGIN_PX) / focalLength;
+  const leanScale = Math.min(STARFIELD_PARALLAX_PX, width * 0.012) *
+    STARFIELD_PARALLAX_REFERENCE_DEPTH / focalLength;
+  // Keep the established overscan with a conservative foreground depth so
+  // mobile density and edge coverage stay stable at the camera limits.
+  const nearestDepth = STARFIELD_SAMPLING_DEPTH;
+  let sampleHalfWidth = 0;
+  let sampleHalfHeight = 0;
+
+  // Joint yaw and pitch stretch corners more than either axis alone. Transform
+  // every viewing corner at both limits, including the nearest stars' lean.
+  for (const yawSign of [-1, 1]) for (const pitchSign of [-1, 1]) {
+    const basis = starfieldCameraBasis(
+      yawSign * degreesToRadians(STARFIELD_MAX_YAW_DEG) * STARFIELD_NEAR_CAMERA_RATE,
+      pitchSign * degreesToRadians(STARFIELD_MAX_PITCH_DEG) * STARFIELD_NEAR_CAMERA_RATE
+    );
+    const leanX = yawSign * leanScale;
+    const leanY = pitchSign * leanScale;
+    for (const xSign of [-1, 1]) for (const ySign of [-1, 1]) {
+      const slopeX = xSign * halfWidth;
+      const slopeY = ySign * halfHeight;
+      // Intersect this screen ray with the nearest depth sphere.
+      const a = 1 + slopeX * slopeX + slopeY * slopeY;
+      const b = 2 * (slopeX * leanX + slopeY * leanY);
+      const c = leanX * leanX + leanY * leanY - nearestDepth * nearestDepth;
+      const cameraZ = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+      const cameraX = slopeX * cameraZ + leanX;
+      const cameraY = slopeY * cameraZ + leanY;
+      const worldX = basis.right.x * cameraX + basis.up.x * cameraY + basis.forward.x * cameraZ;
+      const worldY = basis.right.y * cameraX + basis.up.y * cameraY + basis.forward.y * cameraZ;
+      const worldZ = basis.right.z * cameraX + basis.up.z * cameraY + basis.forward.z * cameraZ;
+      sampleHalfWidth = Math.max(sampleHalfWidth, Math.abs(worldX / worldZ) * focalLength);
+      sampleHalfHeight = Math.max(sampleHalfHeight, Math.abs(worldY / worldZ) * focalLength);
+    }
+  }
+
+  return {sampleHalfWidth: sampleHalfWidth * 1.04, sampleHalfHeight: sampleHalfHeight * 1.04};
 }
 
 function starfieldTargetStarCount(width, height) {

@@ -12,4 +12,4 @@ order: 4
 accent: '#b9d8ff'
 ---
 
-starfield is a dependency-free Canvas experiment with a spacecraft-style stop-flight module that reveals a dense deep-space starfield, depth-arrival animation, and subtle pointer-controlled camera motion.
+starfield is a dependency-free Canvas experiment that opens into a dense deep-space starfield with an automatic depth-arrival animation and subtle pointer-controlled camera motion.

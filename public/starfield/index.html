@@ -5,31 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <title>starfield</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=depth-release-1">
   </head>
   <body>
     <main class="starfield-shell" aria-label="starfield">
       <div id="starfield" class="starfield" aria-hidden="true"></div>
-      <section class="flight-console" aria-label="Spaceship flight console">
-        <div class="flight-console__header">
-          <span>SV-03</span>
-          <span>Flight vector active</span>
-        </div>
-        <div class="flight-console__body">
-          <div class="flight-console__readouts" aria-label="Current flight status">
-            <span>Drift lock</span>
-            <span>Route RN-47</span>
-            <span>Manual stop armed</span>
-          </div>
-          <button class="entry-trigger flight-console__action" type="button" data-starfield-enter aria-label="Stop flight and enter starfield">
-            <span>Stop Flight</span>
-          </button>
-        </div>
-      </section>
+      <p class="starfield-hint" aria-hidden="true">
+        <span class="starfield-hint__mouse">Move to look around</span>
+        <span class="starfield-hint__touch">Drag to look around</span>
+      </p>
       <p class="sr-only">
-        Activate the page to reveal a full-screen dense starfield generated with canvas rendering and pointer-controlled camera rotation.
+        A full-screen generative starfield. Stars arrive automatically. Move the pointer or drag to look around.
       </p>
     </main>
-    <script defer src="./starfield.js"></script>
+    <script defer src="./starfield.js?v=depth-release-1"></script>
   </body>
 </html>
