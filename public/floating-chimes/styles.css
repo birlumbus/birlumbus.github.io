@@ -22,7 +22,7 @@ body {
 }
 body::after {
   content: ''; position: fixed; inset: 0; z-index: 5; pointer-events: none;
-  background: linear-gradient(135deg, #edf4f1d9, #eeeef7d9 60%, #eaf2f5d9);
+  background: linear-gradient(135deg, #edf4f1b3, #eeeef7b3 60%, #eaf2f5b3);
   opacity: 0; transition: opacity .45s ease;
 }
 .is-locked::after { opacity: 1; }
