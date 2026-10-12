@@ -7,8 +7,8 @@
     <meta name="theme-color" content="#071f2a" />
     <meta name="description" content="A jellyfish swims through Moby-Dick, opening currents in the words." />
     <title>jellyfish · words in water</title>
-    <script type="module" crossorigin src="/pretext/assets/index-Dnj5JA18.js"></script>
-    <link rel="stylesheet" crossorigin href="/pretext/assets/index-DwTcoU9R.css">
+    <script type="module" crossorigin src="/pretext/assets/index-DEe9zmo3.js"></script>
+    <link rel="stylesheet" crossorigin href="/pretext/assets/index-CUGbOqpV.css">
   </head>
   <body>
     <main class="stage" id="stage" tabindex="0" aria-label="Jellyfish swimming through text" aria-describedby="interaction-hint keyboard-hint">
@@ -19,7 +19,16 @@
       <p class="sr-only" id="accessible-passage"></p>
     </main>
     <footer class="scene-footer">
-      <button id="dive" class="dive-button" type="button" aria-label="Dive below the words"><span class="depth-dot" aria-hidden="true"></span><span id="depth-label">Dive</span></button>
+      <div class="scene-actions">
+        <button id="dive" class="dive-button" type="button" aria-label="Dive below the words"><span class="depth-dot" aria-hidden="true"></span><span id="depth-label">Dive</span></button>
+        <button class="info-button" type="button" popovertarget="pretext-info" aria-label="About Pretext and this demo" title="About this demo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v6" /><circle cx="12" cy="7" r=".75" fill="currentColor" stroke="none" /></svg>
+        </button>
+      </div>
+      <div class="info-panel" id="pretext-info" popover aria-labelledby="pretext-info-title" role="note">
+        <h2 id="pretext-info-title">About this demo</h2>
+        <p>Pretext is a text-layout library that measures and wraps words without asking the browser to recalculate page layout. I built this demo to explore how text could flow around a moving jellyfish in real time, turning a passage from <cite>Moby-Dick</cite> into something fluid.</p>
+      </div>
       <details class="motion-settings" id="motion-settings">
         <summary><span id="interaction-hint">Move to swim. Click to dive.</span><span class="menu-chevron" aria-hidden="true">⌃</span></summary>
         <div class="settings-panel">
