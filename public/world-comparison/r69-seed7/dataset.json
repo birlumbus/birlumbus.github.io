@@ -1,0 +1,60 @@
+{
+  "id": "r69-seed7",
+  "title": "Round 69 \u00b7 approved terrain \u00b7 seed 7",
+  "seed": 7,
+  "role": "approved-regional-terrain-reference",
+  "files": {
+    "height": "r69-seed7/height.png"
+  },
+  "width": 4096,
+  "height": 2048,
+  "height_encoding": {
+    "format": "rgb24-height-v1",
+    "units": "m",
+    "min": -12000.0,
+    "max": 16000.0,
+    "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+    "quantization_step_m": 0.0016689301531869264,
+    "verified_max_error_m": 0.0008344648213096661
+  },
+  "sea_level_m": 0.0,
+  "radius_km": 6370.0,
+  "native_vertex_count": 1998788,
+  "native_triangle_count": 3997572,
+  "source_height_min_m": -6591.111183166504,
+  "source_height_max_m": 6232.043743133545,
+  "raster_height_min_m": -6591.111328125,
+  "raster_height_max_m": 6232.0439453125,
+  "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+  "source": "Round 69/slope-relief/network-7/flow-bound",
+  "source_files": {
+    "positions.bin": {
+      "label": "Round 69/slope-relief/network-7/flow-bound/positions.bin",
+      "sha256": "c4acfcc8ac95052c923d4d6f4e2592531ec76deb1b9e24d969dcb1bbc40580fc",
+      "bytes": 23985456
+    },
+    "indices.bin": {
+      "label": "Round 69/slope-relief/network-7/flow-bound/indices.bin",
+      "sha256": "b3fb989c0f8d56b021f137e32392d3f6f4deb148fd53d0b43784313e509e9e1c",
+      "bytes": 47970864
+    },
+    "coarse_height.bin": {
+      "label": "Round 69/slope-relief/network-7/flow-bound/coarse_height.bin",
+      "sha256": "4a16b223d52a9295036b8bffee7ca8fba115201c84f2da83863ee95a3d23c32c",
+      "bytes": 7995152
+    }
+  },
+  "notes": "The user-approved Round 69 mountain reference on its original full display mesh. Regional terrain treatment; not a fresh complete automatic generator qualification.",
+  "suggested_center_lon_lat": [
+    -99.7883210852391,
+    70.9448917292267
+  ],
+  "evidence": "Quantified corpus manifest case r69-approved-7 binds exact source hashes.",
+  "overlays": {
+    "available": false,
+    "reason": "No separately verified physical ownership source is attached to this edited display."
+  },
+  "output_sha256": {
+    "height.png": "b0350ccf7866a7e7bbb72b7d92c4825150cfe7f53203fedb6ea8b1b84174333e"
+  }
+}

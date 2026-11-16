@@ -1,0 +1,94 @@
+{
+  "id": "coast-r3-seed7",
+  "title": "Coast refinement R3 \u00b7 seed 7",
+  "seed": 7,
+  "role": "historically-approved-coast-control",
+  "files": {
+    "height": "coast-r3-seed7/height.png",
+    "plates": "coast-r3-seed7/plates.png",
+    "material": "coast-r3-seed7/material.png"
+  },
+  "width": 4096,
+  "height": 2048,
+  "height_encoding": {
+    "format": "rgb24-height-v1",
+    "units": "m",
+    "min": -12000.0,
+    "max": 16000.0,
+    "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+    "quantization_step_m": 0.0016689301531869264,
+    "verified_max_error_m": 0.0008344650759681826
+  },
+  "sea_level_m": 0.0,
+  "radius_km": 6370.0,
+  "native_vertex_count": 1000000,
+  "native_triangle_count": 1999996,
+  "source_height_min_m": -8606.348991394043,
+  "source_height_max_m": 9366.711616516113,
+  "raster_height_min_m": -8606.3486328125,
+  "raster_height_max_m": 9366.7119140625,
+  "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+  "source": "Historical control/coast-refinement-r3/web-refined",
+  "source_files": {
+    "positions.bin": {
+      "label": "Historical control/coast-refinement-r3/web-refined/positions.bin",
+      "sha256": "0048499bd7e3671d910c9fe039a71028e890f7ab71455192899f9c2f56e65c17",
+      "bytes": 12000000
+    },
+    "indices.bin": {
+      "label": "Historical control/coast-refinement-r3/web-refined/indices.bin",
+      "sha256": "a148990291365058d25a8afc05da92a4f60e6c16f578ea5a4cdaf5d795d02a70",
+      "bytes": 23999952
+    },
+    "coarse_height.bin": {
+      "label": "Historical control/coast-refinement-r3/web-refined/coarse_height.bin",
+      "sha256": "ad5ab94a0130b35f6a69c39b9e7e67627fe78c33c8c303b5e89b2c3d49eb04c1",
+      "bytes": 4000000
+    }
+  },
+  "notes": "Saved one-million-vertex coast-refinement-r3 control on the approved 180 My physical world. Later terrain-contours-r2 and Round 69 treatments are separate.",
+  "overlays": {
+    "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+    "physical_sample_count": 4096,
+    "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+    "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+    "plate_ids_present": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "raster_dimensions": [
+      1024,
+      512
+    ],
+    "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+  },
+  "overlay_source_files": {
+    "mesh.npz": {
+      "label": "World Generator/worlds/approved-180my/mesh.npz",
+      "sha256": "90efb8fcbd968002c4a72ccd257b9312d22fb2c26ffb5b7fa2dcb8417f73f6a2"
+    },
+    "fields.npz": {
+      "label": "World Generator/worlds/approved-180my/fields.npz",
+      "sha256": "ba5856fb6b416aee6fc0bb54dfa87af9897809c8b0fa438516307b489a1e23fd"
+    }
+  },
+  "output_sha256": {
+    "material.png": "584b834a452e1c79d6a212101c06cfe3a674a9f1c9b65e99e7588f29a6f750be",
+    "plates.png": "3be55217aa05b190eca6f0c01a4d0a657fb26bbdae7d9e651837a4c81ba613b4",
+    "height.png": "fe297778c23b8e3a6dcb75a34ea915d38316c1371ef33b17a141214292faa500"
+  }
+}

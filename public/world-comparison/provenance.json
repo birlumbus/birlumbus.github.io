@@ -1,0 +1,696 @@
+{
+  "format": "world-comparison-atlases-v1",
+  "width": 4096,
+  "height": 2048,
+  "coordinates": {
+    "projection": "equirectangular",
+    "columns": "longitude -180 to +180 degrees, pixel centers",
+    "rows": "latitude +90 to -90 degrees, pixel centers",
+    "xyz": "right-handed; +z north, +x lon0, +y lon90E"
+  },
+  "height_textures": "RGB is a 24-bit numerical height code. Decode channels without sRGB/gamma conversion. Use nearest filtering for categorical overlays.",
+  "datasets": [
+    {
+      "id": "earth-etopo",
+      "title": "Earth \u00b7 NOAA ETOPO 2022",
+      "role": "observed-earth-reference",
+      "width": 4096,
+      "height": 2048,
+      "files": {
+        "height": "earth-etopo/height.png",
+        "boundaries": "earth-etopo/boundaries.png"
+      },
+      "radius_km": 6371.0,
+      "sea_level_m": 0.0,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.000834465077787172
+      },
+      "source_height_min_m": -10752.08203125,
+      "source_height_max_m": 8157.3564453125,
+      "raster_height_min_m": -10514.794921875,
+      "raster_height_max_m": 7026.06201171875,
+      "native_grid_dimensions": [
+        21600,
+        10800
+      ],
+      "source": "NOAA/ETOPO_2022_v1_60s_N90W180_surface.nc",
+      "source_sha256": "74bbc5c23e85188d93f0beba8116babf69e1a8f160e8dc9f053bf8df01b197b6",
+      "source_url": "https://www.ngdc.noaa.gov/thredds/fileServer/global/ETOPO2022/60s/60s_surface_elev_netcdf/ETOPO_2022_v1_60s_N90W180_surface.nc",
+      "sampling": "Bilinear sampling directly from the complete official 60-arc-second cell-centered ETOPO grid, with cyclic longitude. Raster pixel centers fall within latitude-center support; no polar extrapolation or 40k-point intermediate.",
+      "notes": "EGM2008 vertical datum; includes Antarctic and Greenland ice surfaces. Elevation does not imply plate ownership or crust type. Separate Bird PB2002 boundaries may be shown.",
+      "overlays": {
+        "available": false,
+        "reason": "No crust or plate identity inferred from elevation."
+      },
+      "output_sha256": {
+        "height.png": "ea825987ab94397feb72f5a0f79a7e8d69dc329a5207061cfe49695dc6204f5f",
+        "boundaries.png": "c995b5f00d9b05b126c4f35bdef99442ef1d3dbd4a6465779108a67939beac79"
+      },
+      "boundary_source": "Peter Bird PB2002: 5819 published great-circle boundary segments; no plate interior labels inferred.",
+      "boundary_raster_dimensions": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "id": "r69-seed7",
+      "title": "Round 69 \u00b7 approved terrain \u00b7 seed 7",
+      "seed": 7,
+      "role": "approved-regional-terrain-reference",
+      "files": {
+        "height": "r69-seed7/height.png"
+      },
+      "width": 4096,
+      "height": 2048,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.0008344648213096661
+      },
+      "sea_level_m": 0.0,
+      "radius_km": 6370.0,
+      "native_vertex_count": 1998788,
+      "native_triangle_count": 3997572,
+      "source_height_min_m": -6591.111183166504,
+      "source_height_max_m": 6232.043743133545,
+      "raster_height_min_m": -6591.111328125,
+      "raster_height_max_m": 6232.0439453125,
+      "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+      "source": "Round 69/slope-relief/network-7/flow-bound",
+      "source_files": {
+        "positions.bin": {
+          "label": "Round 69/slope-relief/network-7/flow-bound/positions.bin",
+          "sha256": "c4acfcc8ac95052c923d4d6f4e2592531ec76deb1b9e24d969dcb1bbc40580fc",
+          "bytes": 23985456
+        },
+        "indices.bin": {
+          "label": "Round 69/slope-relief/network-7/flow-bound/indices.bin",
+          "sha256": "b3fb989c0f8d56b021f137e32392d3f6f4deb148fd53d0b43784313e509e9e1c",
+          "bytes": 47970864
+        },
+        "coarse_height.bin": {
+          "label": "Round 69/slope-relief/network-7/flow-bound/coarse_height.bin",
+          "sha256": "4a16b223d52a9295036b8bffee7ca8fba115201c84f2da83863ee95a3d23c32c",
+          "bytes": 7995152
+        }
+      },
+      "notes": "The user-approved Round 69 mountain reference on its original full display mesh. Regional terrain treatment; not a fresh complete automatic generator qualification.",
+      "suggested_center_lon_lat": [
+        -99.7883210852391,
+        70.9448917292267
+      ],
+      "evidence": "Quantified corpus manifest case r69-approved-7 binds exact source hashes.",
+      "overlays": {
+        "available": false,
+        "reason": "No separately verified physical ownership source is attached to this edited display."
+      },
+      "output_sha256": {
+        "height.png": "b0350ccf7866a7e7bbb72b7d92c4825150cfe7f53203fedb6ea8b1b84174333e"
+      }
+    },
+    {
+      "id": "v27-seed7",
+      "title": "V27 complete world \u00b7 seed 7",
+      "seed": 7,
+      "role": "latest-completed-full-generation",
+      "files": {
+        "height": "v27-seed7/height.png",
+        "plates": "v27-seed7/plates.png",
+        "material": "v27-seed7/material.png"
+      },
+      "width": 4096,
+      "height": 2048,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.0008344648849742953
+      },
+      "sea_level_m": 0.0,
+      "radius_km": 6370.0,
+      "native_vertex_count": 1954840,
+      "native_triangle_count": 3909676,
+      "source_height_min_m": -6862.473487854004,
+      "source_height_max_m": 6743.111610412598,
+      "raster_height_min_m": -6862.4736328125,
+      "raster_height_max_m": 6743.11181640625,
+      "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+      "source": "V27 complete 0\u2013180 My/seed-7/display-treated/refined",
+      "source_files": {
+        "positions.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-7/display-treated/refined/positions.bin",
+          "sha256": "5169be38bed93861ba0e7fa4cc160d269ff2e3b39c9b99ebd012892b7bbe6e2d",
+          "bytes": 23458080
+        },
+        "indices.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-7/display-treated/refined/indices.bin",
+          "sha256": "5d98fd72933d0462f1fbf755ef019ce48a9316b37a492e8bae7363144aa4bca8",
+          "bytes": 46916112
+        },
+        "coarse_height.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-7/display-treated/refined/coarse_height.bin",
+          "sha256": "b6b01567941abd51f503ab8b897b500dffb97f8396bc772bd6983815e9cde024",
+          "bytes": 7819360
+        }
+      },
+      "notes": "One of the latest retained complete three-seed builds. All 24 earlier Earth checks passed; newer structure checks and overall aesthetic qualification did not pass.",
+      "evidence": "RESULTS-V27.md and each generation/qualification receipt; newer quantified integration is not represented as a completed fresh build.",
+      "overlays": {
+        "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+        "physical_sample_count": 16384,
+        "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+        "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+        "plate_ids_present": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "raster_dimensions": [
+          1024,
+          512
+        ],
+        "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+      },
+      "overlay_source_files": {
+        "mesh.npz": {
+          "label": "work/round69-generator-20261113/final-v27/seed-7/world/mesh.npz",
+          "sha256": "59b53bf2faec12632eec750583666f9669f29de820c408ee0c8a7ec1e8a412a0"
+        },
+        "fields.npz": {
+          "label": "work/round69-generator-20261113/final-v27/seed-7/world/fields.npz",
+          "sha256": "e7fc1c58ef8b997caee84cc93285bfe8ad30f279fd6fbc9f6ab420d2ddf379f5"
+        }
+      },
+      "output_sha256": {
+        "material.png": "7d07b19f1343ae3b79db6cbb051ab7d34027ef7c29dbdf0fef1805281415dfdb",
+        "plates.png": "195dda97b39fbd40d2219d859f97095838a4ccc0b07cc9ecca8b442d255e2bcc",
+        "height.png": "d923400f0d465e830163a6d97bf984c9480ceeced8019f250a0c7edc583daf95"
+      }
+    },
+    {
+      "id": "v27-seed2019",
+      "title": "V27 complete world \u00b7 seed 2019",
+      "seed": 2019,
+      "role": "latest-completed-full-generation",
+      "files": {
+        "height": "v27-seed2019/height.png",
+        "plates": "v27-seed2019/plates.png",
+        "material": "v27-seed2019/material.png"
+      },
+      "width": 4096,
+      "height": 2048,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.000834465077787172
+      },
+      "sea_level_m": 0.0,
+      "radius_km": 6370.0,
+      "native_vertex_count": 2371666,
+      "native_triangle_count": 4743328,
+      "source_height_min_m": -7064.6820068359375,
+      "source_height_max_m": 6196.797847747803,
+      "raster_height_min_m": -7064.68212890625,
+      "raster_height_max_m": 6041.24755859375,
+      "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+      "source": "V27 complete 0\u2013180 My/seed-2019/display-treated/refined",
+      "source_files": {
+        "positions.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-2019/display-treated/refined/positions.bin",
+          "sha256": "afa2d6b1105757ea34b4be654a69af28b7421f2bd0804071a299d38635005c40",
+          "bytes": 28459992
+        },
+        "indices.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-2019/display-treated/refined/indices.bin",
+          "sha256": "4f0ae037644843e23c405e9503bf23067cb4c017f7b0776499391873ed650a14",
+          "bytes": 56919936
+        },
+        "coarse_height.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-2019/display-treated/refined/coarse_height.bin",
+          "sha256": "26b35891106d186c07a77b122230b4a8f41cd3ae3678996fa22cc049b1db9b2f",
+          "bytes": 9486664
+        }
+      },
+      "notes": "One of the latest retained complete three-seed builds. All 24 earlier Earth checks passed; newer structure checks and overall aesthetic qualification did not pass.",
+      "evidence": "RESULTS-V27.md and each generation/qualification receipt; newer quantified integration is not represented as a completed fresh build.",
+      "overlays": {
+        "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+        "physical_sample_count": 16384,
+        "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+        "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+        "plate_ids_present": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "raster_dimensions": [
+          1024,
+          512
+        ],
+        "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+      },
+      "overlay_source_files": {
+        "mesh.npz": {
+          "label": "work/round69-generator-20261113/final-v27/seed-2019/world/mesh.npz",
+          "sha256": "59b53bf2faec12632eec750583666f9669f29de820c408ee0c8a7ec1e8a412a0"
+        },
+        "fields.npz": {
+          "label": "work/round69-generator-20261113/final-v27/seed-2019/world/fields.npz",
+          "sha256": "5d44b05f586438a73ab5c778d385d8d64242ca917e51b6057ec13b7e43b90586"
+        }
+      },
+      "output_sha256": {
+        "material.png": "dd41f973a0aaff690e1cca3d64694036623a0ac387b6b41f83ae72522f15e4e1",
+        "plates.png": "b0170f65c92a560b7416bb4cb9fd906adeacb5696dcf4a0129dc295c1440c2ea",
+        "height.png": "a9d10e62a6f4fafcc20cc29ab9462d901d6117a9a7d4cf2258ed59a9fa1ff359"
+      }
+    },
+    {
+      "id": "v27-seed7619",
+      "title": "V27 complete world \u00b7 seed 7619",
+      "seed": 7619,
+      "role": "latest-completed-full-generation",
+      "files": {
+        "height": "v27-seed7619/height.png",
+        "plates": "v27-seed7619/plates.png",
+        "material": "v27-seed7619/material.png"
+      },
+      "width": 4096,
+      "height": 2048,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.0008344630396095454
+      },
+      "sea_level_m": 0.0,
+      "radius_km": 6370.0,
+      "native_vertex_count": 1781452,
+      "native_triangle_count": 3562900,
+      "source_height_min_m": -6797.565460205078,
+      "source_height_max_m": 6243.129253387451,
+      "raster_height_min_m": -6797.5654296875,
+      "raster_height_max_m": 6179.93115234375,
+      "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+      "source": "V27 complete 0\u2013180 My/seed-7619/display-treated/refined",
+      "source_files": {
+        "positions.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-7619/display-treated/refined/positions.bin",
+          "sha256": "6f4b4803778428834131c4e5d008192e0a9b8ee3208f1b441641a76e0a1d0094",
+          "bytes": 21377424
+        },
+        "indices.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-7619/display-treated/refined/indices.bin",
+          "sha256": "8b0187a4afe7518492905744bd8294152ab158dd0ff89a3013d5aed3afc3bfcc",
+          "bytes": 42754800
+        },
+        "coarse_height.bin": {
+          "label": "V27 complete 0\u2013180 My/seed-7619/display-treated/refined/coarse_height.bin",
+          "sha256": "668ac2a827dabdbe7a971749ef23cfc48c4690537fb54be525056edf55e8027c",
+          "bytes": 7125808
+        }
+      },
+      "notes": "One of the latest retained complete three-seed builds. All 24 earlier Earth checks passed; newer structure checks and overall aesthetic qualification did not pass.",
+      "evidence": "RESULTS-V27.md and each generation/qualification receipt; newer quantified integration is not represented as a completed fresh build.",
+      "overlays": {
+        "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+        "physical_sample_count": 16384,
+        "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+        "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+        "plate_ids_present": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "raster_dimensions": [
+          1024,
+          512
+        ],
+        "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+      },
+      "overlay_source_files": {
+        "mesh.npz": {
+          "label": "work/round69-generator-20261113/final-v27/seed-7619/world/mesh.npz",
+          "sha256": "59b53bf2faec12632eec750583666f9669f29de820c408ee0c8a7ec1e8a412a0"
+        },
+        "fields.npz": {
+          "label": "work/round69-generator-20261113/final-v27/seed-7619/world/fields.npz",
+          "sha256": "357b6aff4ad74a2faabaa62c6037f9195737ab5d21d5879cd2727ee07375b1a2"
+        }
+      },
+      "output_sha256": {
+        "material.png": "3111886dc60a876fa88257369b81d9b2504f2ae2b4c903520e834e36e2636950",
+        "plates.png": "291dcfa73dc95d34f1ef8caa7751cf092213bb03cc7573c130afa24ee5e423c3",
+        "height.png": "4e8e7a9bb0a9098f5ea0989c3bff39b86818060063d3d2156806f8094d5b929c"
+      }
+    },
+    {
+      "id": "rejected-round2-seed2019",
+      "title": "Rejected early terrain \u00b7 Round 2 \u00b7 seed 2019",
+      "seed": 2019,
+      "role": "rejected-early-terrain-experiment",
+      "files": {
+        "height": "rejected-round2-seed2019/height.png",
+        "plates": "rejected-round2-seed2019/plates.png",
+        "material": "rejected-round2-seed2019/material.png"
+      },
+      "width": 4096,
+      "height": 2048,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.0008344630387000507
+      },
+      "sea_level_m": 0.0,
+      "radius_km": 6370.0,
+      "native_vertex_count": 1000000,
+      "native_triangle_count": 1999996,
+      "source_height_min_m": -6574.800491333008,
+      "source_height_max_m": 5860.2399826049805,
+      "raster_height_min_m": -6574.80029296875,
+      "raster_height_max_m": 5860.23974609375,
+      "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+      "source": "Round 2/tectonic-landforms/connected-2019/connected-balanced",
+      "source_files": {
+        "positions.bin": {
+          "label": "Round 2/tectonic-landforms/connected-2019/connected-balanced/positions.bin",
+          "sha256": "0048499bd7e3671d910c9fe039a71028e890f7ab71455192899f9c2f56e65c17",
+          "bytes": 12000000
+        },
+        "indices.bin": {
+          "label": "Round 2/tectonic-landforms/connected-2019/connected-balanced/indices.bin",
+          "sha256": "a148990291365058d25a8afc05da92a4f60e6c16f578ea5a4cdaf5d795d02a70",
+          "bytes": 23999952
+        },
+        "coarse_height.bin": {
+          "label": "Round 2/tectonic-landforms/connected-2019/connected-balanced/coarse_height.bin",
+          "sha256": "f23abce5ad5b584542740e4b8e5b8918ac13b3e574a208a89ec8e7566b66dc83",
+          "bytes": 4000000
+        }
+      },
+      "notes": "Fold-guided detail was rejected on appearance: parallel relief in neutral highland views. Preserved as historical evidence, not a current candidate.",
+      "evidence": "Round 2/results.json visual_verdict.fold_guided_detail; exact coarse_height SHA f23abce5ad5b584542740e4b8e5b8918ac13b3e574a208a89ec8e7566b66dc83.",
+      "overlays": {
+        "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+        "physical_sample_count": 16384,
+        "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+        "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+        "plate_ids_present": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "raster_dimensions": [
+          1024,
+          512
+        ],
+        "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+      },
+      "overlay_source_files": {
+        "mesh.npz": {
+          "label": "work/earth-parity/polarity-root/airy-final/world/mesh.npz",
+          "sha256": "59b53bf2faec12632eec750583666f9669f29de820c408ee0c8a7ec1e8a412a0"
+        },
+        "fields.npz": {
+          "label": "work/earth-parity/polarity-root/airy-final/world/fields.npz",
+          "sha256": "86098b2690b1485ef7b8e7dc50d6990c34b073bdc5afad8a18f92a7a7693daae"
+        }
+      },
+      "output_sha256": {
+        "material.png": "9448699ebd785fd658734a090dbe9f5093da39035be904a45cf2c12f0cfc8755",
+        "plates.png": "f5a4693a7f973c6f20fe23bbc870085ef0525b5879c481c2a5c0e91502eb9be2",
+        "height.png": "6e35dbdd5e117806c874d54d4dc2694efdc5f4bbad296aee89488214ec2bfc51"
+      }
+    },
+    {
+      "id": "coast-r3-seed7",
+      "title": "Coast refinement R3 \u00b7 seed 7",
+      "seed": 7,
+      "role": "historically-approved-coast-control",
+      "files": {
+        "height": "coast-r3-seed7/height.png",
+        "plates": "coast-r3-seed7/plates.png",
+        "material": "coast-r3-seed7/material.png"
+      },
+      "width": 4096,
+      "height": 2048,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.0008344650759681826
+      },
+      "sea_level_m": 0.0,
+      "radius_km": 6370.0,
+      "native_vertex_count": 1000000,
+      "native_triangle_count": 1999996,
+      "source_height_min_m": -8606.348991394043,
+      "source_height_max_m": 9366.711616516113,
+      "raster_height_min_m": -8606.3486328125,
+      "raster_height_max_m": 9366.7119140625,
+      "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+      "source": "Historical control/coast-refinement-r3/web-refined",
+      "source_files": {
+        "positions.bin": {
+          "label": "Historical control/coast-refinement-r3/web-refined/positions.bin",
+          "sha256": "0048499bd7e3671d910c9fe039a71028e890f7ab71455192899f9c2f56e65c17",
+          "bytes": 12000000
+        },
+        "indices.bin": {
+          "label": "Historical control/coast-refinement-r3/web-refined/indices.bin",
+          "sha256": "a148990291365058d25a8afc05da92a4f60e6c16f578ea5a4cdaf5d795d02a70",
+          "bytes": 23999952
+        },
+        "coarse_height.bin": {
+          "label": "Historical control/coast-refinement-r3/web-refined/coarse_height.bin",
+          "sha256": "ad5ab94a0130b35f6a69c39b9e7e67627fe78c33c8c303b5e89b2c3d49eb04c1",
+          "bytes": 4000000
+        }
+      },
+      "notes": "Saved one-million-vertex coast-refinement-r3 control on the approved 180 My physical world. Later terrain-contours-r2 and Round 69 treatments are separate.",
+      "overlays": {
+        "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+        "physical_sample_count": 4096,
+        "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+        "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+        "plate_ids_present": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "raster_dimensions": [
+          1024,
+          512
+        ],
+        "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+      },
+      "overlay_source_files": {
+        "mesh.npz": {
+          "label": "World Generator/worlds/approved-180my/mesh.npz",
+          "sha256": "90efb8fcbd968002c4a72ccd257b9312d22fb2c26ffb5b7fa2dcb8417f73f6a2"
+        },
+        "fields.npz": {
+          "label": "World Generator/worlds/approved-180my/fields.npz",
+          "sha256": "ba5856fb6b416aee6fc0bb54dfa87af9897809c8b0fa438516307b489a1e23fd"
+        }
+      },
+      "output_sha256": {
+        "material.png": "584b834a452e1c79d6a212101c06cfe3a674a9f1c9b65e99e7588f29a6f750be",
+        "plates.png": "3be55217aa05b190eca6f0c01a4d0a657fb26bbdae7d9e651837a4c81ba613b4",
+        "height.png": "fe297778c23b8e3a6dcb75a34ea915d38316c1371ef33b17a141214292faa500"
+      }
+    },
+    {
+      "id": "original-coarse-seed7",
+      "title": "Early coarse display \u00b7 seed 7",
+      "seed": 7,
+      "role": "superseded-coarse-display",
+      "files": {
+        "height": "original-coarse-seed7/height.png",
+        "plates": "original-coarse-seed7/plates.png",
+        "material": "original-coarse-seed7/material.png"
+      },
+      "width": 4096,
+      "height": 2048,
+      "height_encoding": {
+        "format": "rgb24-height-v1",
+        "units": "m",
+        "min": -12000.0,
+        "max": 16000.0,
+        "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+        "quantization_step_m": 0.0016689301531869264,
+        "verified_max_error_m": 0.000834222897537984
+      },
+      "sea_level_m": 0.0,
+      "radius_km": 6370.0,
+      "native_vertex_count": 4096,
+      "native_triangle_count": 8188,
+      "source_height_min_m": -9260.125160217285,
+      "source_height_max_m": 7981.607913970947,
+      "raster_height_min_m": -9260.125,
+      "raster_height_max_m": 7981.60791015625,
+      "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+      "source": "Historical control/web-original",
+      "source_files": {
+        "positions.bin": {
+          "label": "Historical control/web-original/positions.bin",
+          "sha256": "9387db5ac90dd5a1129d5d12ef0401f1a369b7662050bc3cb8de7bfdcc70ad24",
+          "bytes": 49152
+        },
+        "indices.bin": {
+          "label": "Historical control/web-original/indices.bin",
+          "sha256": "86dbdd893a1d80fe27e99a69051c3fbce5c4c282b4460623a0ae6562dd946014",
+          "bytes": 98256
+        },
+        "coarse_height.bin": {
+          "label": "Historical control/web-original/coarse_height.bin",
+          "sha256": "aa45e39c610f64fbfe275d464619cca407311be59fb51c077beb0175715af7a2",
+          "bytes": 16384
+        }
+      },
+      "notes": "Original 4,096-sample display of the saved physical world, before dense coastline and terrain refinement. Superseded display, not a separate simulation.",
+      "overlays": {
+        "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+        "physical_sample_count": 4096,
+        "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+        "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+        "plate_ids_present": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "raster_dimensions": [
+          1024,
+          512
+        ],
+        "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+      },
+      "overlay_source_files": {
+        "mesh.npz": {
+          "label": "World Generator/worlds/approved-180my/mesh.npz",
+          "sha256": "90efb8fcbd968002c4a72ccd257b9312d22fb2c26ffb5b7fa2dcb8417f73f6a2"
+        },
+        "fields.npz": {
+          "label": "World Generator/worlds/approved-180my/fields.npz",
+          "sha256": "ba5856fb6b416aee6fc0bb54dfa87af9897809c8b0fa438516307b489a1e23fd"
+        }
+      },
+      "output_sha256": {
+        "material.png": "584b834a452e1c79d6a212101c06cfe3a674a9f1c9b65e99e7588f29a6f750be",
+        "plates.png": "3be55217aa05b190eca6f0c01a4d0a657fb26bbdae7d9e651837a4c81ba613b4",
+        "height.png": "458cd45b1e5a293487e299ed3c2ad0406402f853ed2cf7db89440a3f696dd951"
+      }
+    }
+  ]
+}

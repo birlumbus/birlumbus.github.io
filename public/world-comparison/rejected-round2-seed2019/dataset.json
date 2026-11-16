@@ -1,0 +1,97 @@
+{
+  "id": "rejected-round2-seed2019",
+  "title": "Rejected early terrain \u00b7 Round 2 \u00b7 seed 2019",
+  "seed": 2019,
+  "role": "rejected-early-terrain-experiment",
+  "files": {
+    "height": "rejected-round2-seed2019/height.png",
+    "plates": "rejected-round2-seed2019/plates.png",
+    "material": "rejected-round2-seed2019/material.png"
+  },
+  "width": 4096,
+  "height": 2048,
+  "height_encoding": {
+    "format": "rgb24-height-v1",
+    "units": "m",
+    "min": -12000.0,
+    "max": 16000.0,
+    "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+    "quantization_step_m": 0.0016689301531869264,
+    "verified_max_error_m": 0.0008344630387000507
+  },
+  "sea_level_m": 0.0,
+  "radius_km": 6370.0,
+  "native_vertex_count": 1000000,
+  "native_triangle_count": 1999996,
+  "source_height_min_m": -6574.800491333008,
+  "source_height_max_m": 5860.2399826049805,
+  "raster_height_min_m": -6574.80029296875,
+  "raster_height_max_m": 5860.23974609375,
+  "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+  "source": "Round 2/tectonic-landforms/connected-2019/connected-balanced",
+  "source_files": {
+    "positions.bin": {
+      "label": "Round 2/tectonic-landforms/connected-2019/connected-balanced/positions.bin",
+      "sha256": "0048499bd7e3671d910c9fe039a71028e890f7ab71455192899f9c2f56e65c17",
+      "bytes": 12000000
+    },
+    "indices.bin": {
+      "label": "Round 2/tectonic-landforms/connected-2019/connected-balanced/indices.bin",
+      "sha256": "a148990291365058d25a8afc05da92a4f60e6c16f578ea5a4cdaf5d795d02a70",
+      "bytes": 23999952
+    },
+    "coarse_height.bin": {
+      "label": "Round 2/tectonic-landforms/connected-2019/connected-balanced/coarse_height.bin",
+      "sha256": "f23abce5ad5b584542740e4b8e5b8918ac13b3e574a208a89ec8e7566b66dc83",
+      "bytes": 4000000
+    }
+  },
+  "notes": "Fold-guided detail was rejected on appearance: parallel relief in neutral highland views. Preserved as historical evidence, not a current candidate.",
+  "evidence": "Round 2/results.json visual_verdict.fold_guided_detail; exact coarse_height SHA f23abce5ad5b584542740e4b8e5b8918ac13b3e574a208a89ec8e7566b66dc83.",
+  "overlays": {
+    "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+    "physical_sample_count": 16384,
+    "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+    "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+    "plate_ids_present": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "raster_dimensions": [
+      1024,
+      512
+    ],
+    "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+  },
+  "overlay_source_files": {
+    "mesh.npz": {
+      "label": "work/earth-parity/polarity-root/airy-final/world/mesh.npz",
+      "sha256": "59b53bf2faec12632eec750583666f9669f29de820c408ee0c8a7ec1e8a412a0"
+    },
+    "fields.npz": {
+      "label": "work/earth-parity/polarity-root/airy-final/world/fields.npz",
+      "sha256": "86098b2690b1485ef7b8e7dc50d6990c34b073bdc5afad8a18f92a7a7693daae"
+    }
+  },
+  "output_sha256": {
+    "material.png": "9448699ebd785fd658734a090dbe9f5093da39035be904a45cf2c12f0cfc8755",
+    "plates.png": "f5a4693a7f973c6f20fe23bbc870085ef0525b5879c481c2a5c0e91502eb9be2",
+    "height.png": "6e35dbdd5e117806c874d54d4dc2694efdc5f4bbad296aee89488214ec2bfc51"
+  }
+}

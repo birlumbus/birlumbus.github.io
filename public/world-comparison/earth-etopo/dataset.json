@@ -1,0 +1,48 @@
+{
+  "id": "earth-etopo",
+  "title": "Earth \u00b7 NOAA ETOPO 2022",
+  "role": "observed-earth-reference",
+  "width": 4096,
+  "height": 2048,
+  "files": {
+    "height": "earth-etopo/height.png",
+    "boundaries": "earth-etopo/boundaries.png"
+  },
+  "radius_km": 6371.0,
+  "sea_level_m": 0.0,
+  "height_encoding": {
+    "format": "rgb24-height-v1",
+    "units": "m",
+    "min": -12000.0,
+    "max": 16000.0,
+    "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+    "quantization_step_m": 0.0016689301531869264,
+    "verified_max_error_m": 0.000834465077787172
+  },
+  "source_height_min_m": -10752.08203125,
+  "source_height_max_m": 8157.3564453125,
+  "raster_height_min_m": -10514.794921875,
+  "raster_height_max_m": 7026.06201171875,
+  "native_grid_dimensions": [
+    21600,
+    10800
+  ],
+  "source": "NOAA/ETOPO_2022_v1_60s_N90W180_surface.nc",
+  "source_sha256": "74bbc5c23e85188d93f0beba8116babf69e1a8f160e8dc9f053bf8df01b197b6",
+  "source_url": "https://www.ngdc.noaa.gov/thredds/fileServer/global/ETOPO2022/60s/60s_surface_elev_netcdf/ETOPO_2022_v1_60s_N90W180_surface.nc",
+  "sampling": "Bilinear sampling directly from the complete official 60-arc-second cell-centered ETOPO grid, with cyclic longitude. Raster pixel centers fall within latitude-center support; no polar extrapolation or 40k-point intermediate.",
+  "notes": "EGM2008 vertical datum; includes Antarctic and Greenland ice surfaces. Elevation does not imply plate ownership or crust type. Separate Bird PB2002 boundaries may be shown.",
+  "overlays": {
+    "available": false,
+    "reason": "No crust or plate identity inferred from elevation."
+  },
+  "output_sha256": {
+    "height.png": "ea825987ab94397feb72f5a0f79a7e8d69dc329a5207061cfe49695dc6204f5f",
+    "boundaries.png": "c995b5f00d9b05b126c4f35bdef99442ef1d3dbd4a6465779108a67939beac79"
+  },
+  "boundary_source": "Peter Bird PB2002: 5819 published great-circle boundary segments; no plate interior labels inferred.",
+  "boundary_raster_dimensions": [
+    2048,
+    1024
+  ]
+}

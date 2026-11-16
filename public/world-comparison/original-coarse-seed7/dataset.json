@@ -1,0 +1,94 @@
+{
+  "id": "original-coarse-seed7",
+  "title": "Early coarse display \u00b7 seed 7",
+  "seed": 7,
+  "role": "superseded-coarse-display",
+  "files": {
+    "height": "original-coarse-seed7/height.png",
+    "plates": "original-coarse-seed7/plates.png",
+    "material": "original-coarse-seed7/material.png"
+  },
+  "width": 4096,
+  "height": 2048,
+  "height_encoding": {
+    "format": "rgb24-height-v1",
+    "units": "m",
+    "min": -12000.0,
+    "max": 16000.0,
+    "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+    "quantization_step_m": 0.0016689301531869264,
+    "verified_max_error_m": 0.000834222897537984
+  },
+  "sea_level_m": 0.0,
+  "radius_km": 6370.0,
+  "native_vertex_count": 4096,
+  "native_triangle_count": 8188,
+  "source_height_min_m": -9260.125160217285,
+  "source_height_max_m": 7981.607913970947,
+  "raster_height_min_m": -9260.125,
+  "raster_height_max_m": 7981.60791015625,
+  "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+  "source": "Historical control/web-original",
+  "source_files": {
+    "positions.bin": {
+      "label": "Historical control/web-original/positions.bin",
+      "sha256": "9387db5ac90dd5a1129d5d12ef0401f1a369b7662050bc3cb8de7bfdcc70ad24",
+      "bytes": 49152
+    },
+    "indices.bin": {
+      "label": "Historical control/web-original/indices.bin",
+      "sha256": "86dbdd893a1d80fe27e99a69051c3fbce5c4c282b4460623a0ae6562dd946014",
+      "bytes": 98256
+    },
+    "coarse_height.bin": {
+      "label": "Historical control/web-original/coarse_height.bin",
+      "sha256": "aa45e39c610f64fbfe275d464619cca407311be59fb51c077beb0175715af7a2",
+      "bytes": 16384
+    }
+  },
+  "notes": "Original 4,096-sample display of the saved physical world, before dense coastline and terrain refinement. Superseded display, not a separate simulation.",
+  "overlays": {
+    "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+    "physical_sample_count": 4096,
+    "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+    "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+    "plate_ids_present": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "raster_dimensions": [
+      1024,
+      512
+    ],
+    "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+  },
+  "overlay_source_files": {
+    "mesh.npz": {
+      "label": "World Generator/worlds/approved-180my/mesh.npz",
+      "sha256": "90efb8fcbd968002c4a72ccd257b9312d22fb2c26ffb5b7fa2dcb8417f73f6a2"
+    },
+    "fields.npz": {
+      "label": "World Generator/worlds/approved-180my/fields.npz",
+      "sha256": "ba5856fb6b416aee6fc0bb54dfa87af9897809c8b0fa438516307b489a1e23fd"
+    }
+  },
+  "output_sha256": {
+    "material.png": "584b834a452e1c79d6a212101c06cfe3a674a9f1c9b65e99e7588f29a6f750be",
+    "plates.png": "3be55217aa05b190eca6f0c01a4d0a657fb26bbdae7d9e651837a4c81ba613b4",
+    "height.png": "458cd45b1e5a293487e299ed3c2ad0406402f853ed2cf7db89440a3f696dd951"
+  }
+}

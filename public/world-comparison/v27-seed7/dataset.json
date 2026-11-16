@@ -1,0 +1,95 @@
+{
+  "id": "v27-seed7",
+  "title": "V27 complete world \u00b7 seed 7",
+  "seed": 7,
+  "role": "latest-completed-full-generation",
+  "files": {
+    "height": "v27-seed7/height.png",
+    "plates": "v27-seed7/plates.png",
+    "material": "v27-seed7/material.png"
+  },
+  "width": 4096,
+  "height": 2048,
+  "height_encoding": {
+    "format": "rgb24-height-v1",
+    "units": "m",
+    "min": -12000.0,
+    "max": 16000.0,
+    "decode": "min + (R*65536 + G*256 + B)/16777215*(max-min)",
+    "quantization_step_m": 0.0016689301531869264,
+    "verified_max_error_m": 0.0008344648849742953
+  },
+  "sea_level_m": 0.0,
+  "radius_km": 6370.0,
+  "native_vertex_count": 1954840,
+  "native_triangle_count": 3909676,
+  "source_height_min_m": -6862.473487854004,
+  "source_height_max_m": 6743.111610412598,
+  "raster_height_min_m": -6862.4736328125,
+  "raster_height_max_m": 6743.11181640625,
+  "sampling": "Nearest normalized native vertex by angular distance at equirectangular pixel centers; no tectonics regenerated. This display raster is not triangle barycentric interpolation.",
+  "source": "V27 complete 0\u2013180 My/seed-7/display-treated/refined",
+  "source_files": {
+    "positions.bin": {
+      "label": "V27 complete 0\u2013180 My/seed-7/display-treated/refined/positions.bin",
+      "sha256": "5169be38bed93861ba0e7fa4cc160d269ff2e3b39c9b99ebd012892b7bbe6e2d",
+      "bytes": 23458080
+    },
+    "indices.bin": {
+      "label": "V27 complete 0\u2013180 My/seed-7/display-treated/refined/indices.bin",
+      "sha256": "5d98fd72933d0462f1fbf755ef019ce48a9316b37a492e8bae7363144aa4bca8",
+      "bytes": 46916112
+    },
+    "coarse_height.bin": {
+      "label": "V27 complete 0\u2013180 My/seed-7/display-treated/refined/coarse_height.bin",
+      "sha256": "b6b01567941abd51f503ab8b897b500dffb97f8396bc772bd6983815e9cde024",
+      "bytes": 7819360
+    }
+  },
+  "notes": "One of the latest retained complete three-seed builds. All 24 earlier Earth checks passed; newer structure checks and overall aesthetic qualification did not pass.",
+  "evidence": "RESULTS-V27.md and each generation/qualification receipt; newer quantified integration is not represented as a completed fresh build.",
+  "overlays": {
+    "sampling": "Nearest saved physical sample, independently of fine display vertices; display edits do not add physical states.",
+    "physical_sample_count": 16384,
+    "plate_encoding": "R*65536 + G*256 + B; categorical plate ID",
+    "material_encoding": "L=0 oceanic crust; L=255 continental crust; not a dry-land mask",
+    "plate_ids_present": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "raster_dimensions": [
+      1024,
+      512
+    ],
+    "display_reduction": "Nearest-pixel reduction of the verified categorical atlas; no new geological states."
+  },
+  "overlay_source_files": {
+    "mesh.npz": {
+      "label": "work/round69-generator-20261113/final-v27/seed-7/world/mesh.npz",
+      "sha256": "59b53bf2faec12632eec750583666f9669f29de820c408ee0c8a7ec1e8a412a0"
+    },
+    "fields.npz": {
+      "label": "work/round69-generator-20261113/final-v27/seed-7/world/fields.npz",
+      "sha256": "e7fc1c58ef8b997caee84cc93285bfe8ad30f279fd6fbc9f6ab420d2ddf379f5"
+    }
+  },
+  "output_sha256": {
+    "material.png": "7d07b19f1343ae3b79db6cbb051ab7d34027ef7c29dbdf0fef1805281415dfdb",
+    "plates.png": "195dda97b39fbd40d2219d859f97095838a4ccc0b07cc9ecca8b442d255e2bcc",
+    "height.png": "d923400f0d465e830163a6d97bf984c9480ceeced8019f250a0c7edc583daf95"
+  }
+}
